@@ -1,0 +1,17 @@
+# With esbuild we ship only dist/. Everything below is dev-only.
+.vscode/**
+.github/**
+.claude/**
+src/**
+test/**
+out/**
+out-test/**
+node_modules/**
+esbuild.js
+tsconfig.json
+tsconfig.test.json
+**/*.map
+**/*.ts
+.gitignore
+.editorconfig
+.vscodeignore

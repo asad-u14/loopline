@@ -1,0 +1,460 @@
+{
+  "name": "loopline",
+  "displayName": "Loopline",
+  "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
+  "version": "0.17.0",
+  "publisher": "loopline",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "keywords": [
+    "jira",
+    "gitlab",
+    "git",
+    "branch",
+    "merge request",
+    "workflow"
+  ],
+  "icon": "icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "loopline",
+          "title": "Loopline",
+          "icon": "resources/loopline-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "loopline": [
+        {
+          "id": "loopline.ticketsView",
+          "name": "Tickets",
+          "icon": "resources/loopline-activity.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "loopline.ticketsView",
+        "contents": "Connect Jira and GitLab to see your active-sprint tickets and start branches in one click.\n[Run Setup Wizard](command:loopline.runSetup)\n\nAlready set up? [Create a Branch](command:loopline.createBranch)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "loopline.createBranch",
+        "title": "Loopline: Create Branch from Jira Ticket",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "loopline.commitAndPush",
+        "title": "Loopline: Commit, Push & Create MR",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "loopline.runSetup",
+        "title": "Loopline: Run Setup Wizard"
+      },
+      {
+        "command": "loopline.setJiraCredentials",
+        "title": "Loopline: Set Jira Credentials"
+      },
+      {
+        "command": "loopline.setGitLabToken",
+        "title": "Loopline: Set GitLab Token"
+      },
+      {
+        "command": "loopline.setAnthropicKey",
+        "title": "Loopline: Set AI (Anthropic) API Key"
+      },
+      {
+        "command": "loopline.ticketActions",
+        "title": "Loopline: Ticket Actions"
+      },
+      {
+        "command": "loopline.refreshTicketStatus",
+        "title": "Loopline: Refresh Ticket Status"
+      },
+      {
+        "command": "loopline.showLogs",
+        "title": "Loopline: Show Logs"
+      },
+      {
+        "command": "loopline.diagnose",
+        "title": "Loopline: Diagnose Connection"
+      },
+      {
+        "command": "loopline.tickets.refresh",
+        "title": "Loopline: Refresh Tickets",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "loopline.tickets.createBranch",
+        "title": "Loopline: Create Branch from this Ticket",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "loopline.tickets.openInJira",
+        "title": "Loopline: Open Ticket in Jira",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "loopline.tickets.showAllOpen",
+        "title": "Loopline: Show All Open Tickets",
+        "icon": "$(filter-filled)"
+      },
+      {
+        "command": "loopline.tickets.showActiveSprint",
+        "title": "Loopline: Show Active Sprint Tickets Only",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "loopline.tickets.checkout",
+        "title": "Loopline: Switch to this Ticket's Branch",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "loopline.tickets.openDetails",
+        "title": "Loopline: Open Ticket in VS Code",
+        "icon": "$(preview)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "loopline.refreshTicketStatus",
+          "when": "false"
+        },
+        {
+          "command": "loopline.tickets.refresh",
+          "when": "false"
+        },
+        {
+          "command": "loopline.tickets.createBranch",
+          "when": "false"
+        },
+        {
+          "command": "loopline.tickets.openInJira",
+          "when": "false"
+        },
+        {
+          "command": "loopline.tickets.showAllOpen",
+          "when": "true"
+        },
+        {
+          "command": "loopline.tickets.showActiveSprint",
+          "when": "true"
+        },
+        {
+          "command": "loopline.tickets.checkout",
+          "when": "false"
+        },
+        {
+          "command": "loopline.tickets.openDetails",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "loopline.tickets.showAllOpen",
+          "when": "view == loopline.ticketsView && loopline:ticketScope == activeSprint",
+          "group": "navigation@1"
+        },
+        {
+          "command": "loopline.tickets.showActiveSprint",
+          "when": "view == loopline.ticketsView && loopline:ticketScope == allOpen",
+          "group": "navigation@1"
+        },
+        {
+          "command": "loopline.tickets.refresh",
+          "when": "view == loopline.ticketsView",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "loopline.tickets.checkout",
+          "when": "view == loopline.ticketsView && viewItem == ticketWithBranch",
+          "group": "inline@1"
+        },
+        {
+          "command": "loopline.tickets.createBranch",
+          "when": "view == loopline.ticketsView && viewItem == ticket",
+          "group": "inline@1"
+        },
+        {
+          "command": "loopline.tickets.createBranch",
+          "when": "view == loopline.ticketsView && viewItem == ticketWithBranch",
+          "group": "inline@2"
+        },
+        {
+          "command": "loopline.tickets.openDetails",
+          "when": "view == loopline.ticketsView && viewItem =~ /^ticket/",
+          "group": "inline@3"
+        },
+        {
+          "command": "loopline.tickets.openInJira",
+          "when": "view == loopline.ticketsView && viewItem =~ /^ticket/",
+          "group": "inline@4"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "loopline.createBranch",
+          "group": "navigation",
+          "when": "scmProvider == git"
+        },
+        {
+          "command": "loopline.commitAndPush",
+          "group": "navigation",
+          "when": "scmProvider == git"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Loopline",
+      "properties": {
+        "loopline.jira.type": {
+          "type": "string",
+          "enum": [
+            "cloud",
+            "server"
+          ],
+          "default": "cloud",
+          "markdownDescription": "Jira hosting type. `cloud` uses email + API token (Basic auth); `server` uses a Personal Access Token (Bearer auth) for Jira Server / Data Center."
+        },
+        "loopline.jira.baseUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Base URL of your Jira instance, e.g. `https://your-company.atlassian.net` (Cloud) or `https://jira.your-company.com` (Server)."
+        },
+        "loopline.jira.email": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Your Atlassian account email. Only used for Jira **Cloud** (Basic auth). Leave blank for Server/DC."
+        },
+        "loopline.gitlab.host": {
+          "type": "string",
+          "default": "https://gitlab.com",
+          "markdownDescription": "GitLab host. Defaults to `https://gitlab.com`."
+        },
+        "loopline.gitlab.projectId": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional. Pin the GitLab project id or `namespace/path`. Leave blank to auto-detect from your `origin` remote."
+        },
+        "loopline.defaultTargetBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "Default target branch for merge requests."
+        },
+        "loopline.branchTypeMapping": {
+          "type": "object",
+          "default": {
+            "Bug": "bugfix",
+            "Story": "feature",
+            "Task": "feature",
+            "Improvement": "feature",
+            "Sub-task": "feature",
+            "Epic": "feature"
+          },
+          "markdownDescription": "Maps a Jira issue type to the branch prefix. e.g. `Bug` → `bugfix`, producing `bugfix/LPB-1234-...`."
+        },
+        "loopline.commitTypeMapping": {
+          "type": "object",
+          "default": {
+            "bugfix": "bugfix",
+            "feature": "feat",
+            "hotfix": "fix",
+            "chore": "chore"
+          },
+          "markdownDescription": "Maps a **branch prefix** to the commit-message prefix. e.g. branch prefix `feature` → commit prefix `feat`, producing `feat: LPB-1234 ...`."
+        },
+        "loopline.confirmBranchName": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the generated branch name for confirmation/edit before creating it."
+        },
+        "loopline.mr.includeJiraDescription": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the Jira ticket description in the generated merge-request body."
+        },
+        "loopline.protectedBranches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "main",
+            "master",
+            "develop"
+          ],
+          "description": "Branches Loopline warns you about before committing directly onto them."
+        },
+        "loopline.jira.transitionOnBranch": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional. When a branch is created, move the ticket toward this status (e.g. `In Progress`). Matches the target status or transition name in your Jira workflow. Leave blank to disable."
+        },
+        "loopline.jira.transitionOnMr": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional. When a merge request is created, move the ticket toward this status (e.g. `In Review`). Leave blank to disable."
+        },
+        "loopline.jira.ticketScope": {
+          "type": "string",
+          "enum": [
+            "activeSprint",
+            "allOpen"
+          ],
+          "enumDescriptions": [
+            "Only your issues in the currently active sprint",
+            "All your open (unresolved) assigned issues"
+          ],
+          "default": "activeSprint",
+          "markdownDescription": "Which of your assigned issues the **Loopline sidebar** and the *Create Branch* picker list. `activeSprint` uses `sprint in openSprints()` and automatically falls back to all-open on boards/projects without sprints. You can flip this any time with the filter button in the sidebar's title bar."
+        },
+        "loopline.ai.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Opt in to AI-generated merge-request descriptions. When on, Loopline sends the branch **diff** and **ticket text** to the Anthropic API to draft the MR body, which you review and edit before it's posted. Requires an API key (`Loopline: Set AI (Anthropic) API Key`)."
+        },
+        "loopline.ai.model": {
+          "type": "string",
+          "default": "claude-sonnet-5",
+          "markdownDescription": "Anthropic model id used for AI features (e.g. `claude-sonnet-5`, `claude-haiku-4-5`)."
+        },
+        "loopline.ai.baseUrl": {
+          "type": "string",
+          "default": "https://api.anthropic.com",
+          "markdownDescription": "Anthropic API base URL. Point this at your company gateway / proxy if source code can't go to the public API."
+        },
+        "loopline.ai.maxDiffBytes": {
+          "type": "number",
+          "default": 60000,
+          "markdownDescription": "Maximum diff size (in bytes) sent to the AI. Larger diffs are truncated and flagged in the prompt."
+        },
+        "loopline.showTicketDetailsOnBranch": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "After creating a branch, open the ticket description in a window and (if AI is enabled) offer to generate implementation suggestions."
+        },
+        "loopline.baseBranch": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Branch to base new branches on. Blank uses `loopline.defaultTargetBranch`."
+        },
+        "loopline.updateBaseBeforeBranch": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "always",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Ask each time whether to fetch the base first",
+            "Always fetch the base and branch from it",
+            "Never fetch; branch from current HEAD"
+          ],
+          "default": "ask",
+          "markdownDescription": "Whether to fetch the base branch from origin before creating a new branch, so you start from up-to-date code."
+        },
+        "loopline.http.proxy": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Proxy URL for Jira/GitLab/AI requests, e.g. `http://proxy.corp.com:8080`. Overrides `HTTPS_PROXY`/`HTTP_PROXY`. **Node does not use the OS proxy**, so on corporate networks (especially Windows) the browser may work while Loopline can't connect — set this if so. `NO_PROXY` is respected. Run **Loopline: Diagnose Connection** to see what's being used."
+        },
+        "loopline.http.extraCaCerts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Absolute paths to extra CA certificate files (PEM/`.crt`) to trust. **Node does not use the Windows certificate store**, so a self-hosted Jira/GitLab behind a corporate CA or an HTTPS-inspecting proxy fails with `UNABLE_TO_VERIFY_LEAF_SIGNATURE` until the root CA is added here (or via `NODE_EXTRA_CA_CERTS`)."
+        },
+        "loopline.http.allowInsecureTls": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "⚠️ Disable TLS certificate verification for Loopline's requests. **Insecure** — it defeats HTTPS protection and exposes your tokens to interception. Use only as a temporary workaround; prefer `loopline.http.extraCaCerts`."
+        },
+        "loopline.staging": {
+          "type": "string",
+          "enum": [
+            "respectStaged",
+            "pick",
+            "all"
+          ],
+          "enumDescriptions": [
+            "If anything is already staged, commit exactly that (preserves `git add -p` hunk staging). Otherwise stage tracked modifications, asking before including untracked files.",
+            "Always choose the files to commit from a list.",
+            "Stage everything, including untracked files (`git add -A`)."
+          ],
+          "default": "respectStaged",
+          "markdownDescription": "What *Commit, Push & Create MR* stages. `respectStaged` treats your index as your intent: if you've staged files (or hunks via `git add -p`), only those are committed. `all` is the old `git add -A` behavior, which sweeps in unrelated edits and untracked files."
+        },
+        "loopline.singleCommit": {
+          "type": "string",
+          "enum": [
+            "squash",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Keep the merge request at a single commit by squashing the branch's commits (force-pushed with --force-with-lease). You are asked before any history is rewritten.",
+            "Add a new commit each time; the merge request accumulates commits."
+          ],
+          "default": "squash",
+          "markdownDescription": "Keep the merge request to **one commit**. With `squash`, re-running the commit command on a branch that already has commits offers to collapse them into a single commit and force-push with `--force-with-lease` (which fails safely if someone else pushed). The first commit on a branch never needs squashing."
+        },
+        "loopline.sidebar.groupByStatus": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Group tickets in the Loopline sidebar under their Jira status (In Progress, To Do, …). Grouping is skipped automatically when every ticket shares one status."
+        },
+        "loopline.sidebar.colorfulIcons": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Tint each ticket's icon by issue type (Bug red, Story green, Epic purple, Sub-task orange, Task/other blue) instead of the plain theme-foreground icon."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run bundle -- --production",
+    "bundle": "node esbuild.js",
+    "check-types": "tsc --noEmit -p ./",
+    "compile-tests": "tsc -p ./tsconfig.test.json",
+    "test": "npm run compile-tests && node --test \"out-test/**/*.test.js\"",
+    "pretest": "npm run check-types",
+    "watch": "node esbuild.js --watch",
+    "package": "npm run check-types && npm run bundle -- --production && vsce package"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "https-proxy-agent": "^7.0.6",
+    "simple-git": "^3.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.80.0",
+    "esbuild": "^0.23.1",
+    "typescript": "^5.5.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/loopline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/loopline/issues"
+  }
+}

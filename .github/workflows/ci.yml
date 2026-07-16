@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+      - run: npm ci
+      - run: npm run check-types
+      - run: npm test
+      - run: npm run bundle -- --production
+      - name: Package VSIX
+        run: npx --yes @vscode/vsce package --out loopline.vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loopline-vsix
+          path: loopline.vsix
