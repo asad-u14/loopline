@@ -43,6 +43,8 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
   private sprintFilterApplied = true;
   /** ticket key -> local branches referencing it. */
   private ticketBranches: Record<string, string[]> = {};
+  private headWatcher?: vscode.FileSystemWatcher;
+  private watchedRepo?: string;
 
   constructor(private ctx: vscode.ExtensionContext) {
     ctx.subscriptions.push(
@@ -72,6 +74,28 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
   /** Light refresh — re-render (e.g. branch changed) without re-fetching tickets. */
   touch(): void {
     this._onDidChange.fire();
+  }
+
+  /**
+   * Watch .git/HEAD so a branch switch from outside VS Code's own git integration
+   * (e.g. `git checkout` in the integrated terminal) still updates the "Current"
+   * row — those checkouts don't fire onDidChangeActiveTextEditor or a focus event.
+   * Mirrors TicketStatusBar's watcher.
+   */
+  private ensureHeadWatcher(repoRoot: string): void {
+    if (this.watchedRepo === repoRoot) {
+      return;
+    }
+    this.headWatcher?.dispose();
+    this.watchedRepo = repoRoot;
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(repoRoot, ".git/HEAD")
+    );
+    const onChange = () => this.touch();
+    watcher.onDidChange(onChange);
+    watcher.onDidCreate(onChange);
+    this.headWatcher = watcher;
+    this.ctx.subscriptions.push(watcher);
   }
 
   getTreeItem(node: Node): vscode.TreeItem {
@@ -226,6 +250,7 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
       if (!repoRoot) {
         return [{ t: "message", label: "No git repository open", icon: "info" }];
       }
+      this.ensureHeadWatcher(repoRoot);
       let branch = "";
       try {
         branch = await new GitService(repoRoot).currentBranch();

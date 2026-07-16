@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.19.1] — 2026-07-16
+### Fixed
+- **The sidebar's "Current" row didn't update on an external branch switch** (e.g. `git checkout` in the integrated terminal) — it only refreshed on editor/window-focus changes, neither of which fires when you never leave the VS Code window. It now also watches `.git/HEAD`, mirroring the status-bar indicator, which already had this.
+
 ## [0.19.0] — 2026-07-16
 ### Added
 - **Impact footer.** Once you've created at least one branch, commit, or MR through Loopline, a row pins to the bottom of the sidebar: `12 branches · 8 commits · 5 MRs · ~3.5h saved`. Hidden until there's something to show. The time-saved figure is a clearly-labeled estimate (`loopline.impact.minutesPerBranch` / `minutesPerCommit` / `minutesPerMr`, defaults 15 / 5 / 10) — the assumptions are always visible alongside it. Clicking the row opens the full breakdown with a "Reset counters" option. Added `Loopline: Show Impact`.
