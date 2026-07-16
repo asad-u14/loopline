@@ -9,6 +9,7 @@ import { TicketsTreeProvider, keyFromArg } from "./ui/ticketsTree";
 import { openTicketDetailsCommand } from "./commands/ticketDetails";
 import { showImpactDetailsCommand } from "./commands/impactDetails";
 import { standupSummaryCommand } from "./commands/standupSummary";
+import { createProjectConfigCommand } from "./commands/createProjectConfig";
 import { ticketFromArg } from "./util/tree-helpers";
 import { initLog, log, logError, showLog } from "./util/log";
 import { resetHttpPlanLog } from "./util/http-client";
@@ -67,6 +68,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
   register("loopline.showImpactDetails", () => showImpactDetailsCommand(context));
   register("loopline.standupSummary", () => standupSummaryCommand(context));
+  register("loopline.createProjectConfig", () => createProjectConfigCommand(context));
 
   register("loopline.tickets.refresh", async () => tickets.refresh());
 

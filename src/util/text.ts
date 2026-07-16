@@ -57,13 +57,35 @@ export function slugify(text: string, maxLen = 60): string {
   return (lastDash > 0 ? cut.slice(0, lastDash) : cut).replace(/-+$/g, "");
 }
 
+export const DEFAULT_BRANCH_TEMPLATE = "{prefix}/{ticket}-{slug}";
+export const DEFAULT_COMMIT_TEMPLATE = "{prefix}: {ticket} {summary}";
+
+/** Replace `{token}` placeholders; a token with no matching value is left as-is. */
+export function renderTemplate(template: string, tokens: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (whole, name) =>
+    Object.prototype.hasOwnProperty.call(tokens, name) ? tokens[name] : whole
+  );
+}
+
 /**
- * Build a branch name: `feature/LPB-1234-some-summary-issue`.
+ * Build a branch name from a template, e.g. `feature/LPB-1234-some-summary-issue`
+ * for the default `{prefix}/{ticket}-{slug}`. The default template keeps the
+ * exact legacy behavior (no dangling separator when the slug is empty); custom
+ * templates are rendered literally, so an empty slug may leave a trailing
+ * separator — the tradeoff for letting a team pick any shape.
  */
-export function buildBranchName(prefix: string, ticketKey: string, title: string): string {
+export function buildBranchName(
+  prefix: string,
+  ticketKey: string,
+  title: string,
+  template: string = DEFAULT_BRANCH_TEMPLATE
+): string {
   const slug = slugify(title);
-  const parts = [ticketKey, slug].filter(Boolean).join("-");
-  return `${prefix}/${parts}`;
+  if (template === DEFAULT_BRANCH_TEMPLATE) {
+    const parts = [ticketKey, slug].filter(Boolean).join("-");
+    return `${prefix}/${parts}`;
+  }
+  return renderTemplate(template, { prefix, ticket: ticketKey, slug });
 }
 
 /**
@@ -91,10 +113,16 @@ export function parseBranchName(branch: string): ParsedBranch | undefined {
 }
 
 /**
- * Build a commit message: `feat: LPB-1234 some summary issue`.
- * `commitPrefix` is already mapped from the branch prefix by the caller.
+ * Build a commit message from a template, e.g. `feat: LPB-1234 some summary issue`
+ * for the default `{prefix}: {ticket} {summary}`. `commitPrefix` is already
+ * mapped from the branch prefix by the caller.
  */
-export function buildCommitMessage(commitPrefix: string, ticketKey: string, summary: string): string {
+export function buildCommitMessage(
+  commitPrefix: string,
+  ticketKey: string,
+  summary: string,
+  template: string = DEFAULT_COMMIT_TEMPLATE
+): string {
   const clean = (summary || "").trim().replace(/\s+/g, " ");
-  return `${commitPrefix}: ${ticketKey} ${clean}`.trim();
+  return renderTemplate(template, { prefix: commitPrefix, ticket: ticketKey, summary: clean }).trim();
 }

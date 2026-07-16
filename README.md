@@ -139,6 +139,8 @@ All under `loopline.*` in Settings (or `settings.json`):
 | `loopline.defaultTargetBranch` | MR target branch |
 | `loopline.branchTypeMapping` | Jira issue type → branch prefix |
 | `loopline.commitTypeMapping` | Branch prefix → commit prefix (`feature → feat`) |
+| `loopline.branchNameTemplate` | Branch name shape. Tokens: `{prefix}`, `{ticket}`, `{slug}` (default `{prefix}/{ticket}-{slug}`, i.e. today's format) |
+| `loopline.commitMessageTemplate` | Commit message shape. Tokens: `{prefix}`, `{ticket}`, `{summary}` (default `{prefix}: {ticket} {summary}`, i.e. today's format) |
 | `loopline.confirmBranchName` | Show branch name for confirmation before creating |
 | `loopline.mr.includeJiraDescription` | Include ticket description in the MR body |
 | `loopline.protectedBranches` | Branches you're warned about before committing directly (default `main`, `master`, `develop`) |
@@ -167,6 +169,31 @@ Example custom mappings and transitions:
 "loopline.jira.transitionOnBranch": "In Progress",
 "loopline.jira.transitionOnMr": "In Review"
 ```
+
+## Team-shared config (`.loopline.json`)
+
+By default, every setting above is personal — it lives in your own VS Code settings. If a team wants everyone to share the same conventions without each person configuring VS Code by hand, run **`Loopline: Create Project Config File`**. It scaffolds a `.loopline.json` at the repo root, pre-filled with every shareable field from your current settings, and opens it for editing. Commit the file so the rest of the team gets it automatically on clone.
+
+This is entirely opt-in and never happens on its own: Loopline never creates or writes `.loopline.json` unless you explicitly run that command (or someone hand-writes the file). If the file isn't there, nothing about Loopline's behavior changes.
+
+```jsonc
+// .loopline.json — committed at the repo root
+{
+  "branchTypeMapping": { "Bug": "bugfix", "Story": "feature" },
+  "commitTypeMapping": { "bugfix": "fix", "feature": "feat" },
+  "protectedBranches": ["main", "release"],
+  "defaultTargetBranch": "main",
+  "jiraTransitionOnBranch": "In Progress",
+  "jiraTransitionOnMr": "In Review",
+  "jiraTicketScope": "activeSprint",
+  "staging": "respectStaged",
+  "singleCommit": "squash",
+  "branchNameTemplate": "{prefix}/{ticket}-{slug}",
+  "commitMessageTemplate": "{prefix}: {ticket} {summary}"
+}
+```
+
+**Precedence:** an explicit personal or workspace setting always wins over `.loopline.json` — the file only fills in for whoever hasn't customized that particular setting themselves, so it standardizes without silently overriding a deliberate local choice. Only the fields above are recognized; secrets, tokens, your Jira email, AI on/off, and proxy/CA settings stay personal and are never read from this file.
 
 ---
 

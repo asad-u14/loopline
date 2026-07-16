@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { GitService } from "../services/git";
 import { JiraService, JiraIssueSummary } from "../services/jira";
-import { readConfig, ensureConfigured, LooplineConfig } from "../util/config";
+import { readConfigForRepo, ensureConfigured, LooplineConfig } from "../util/config";
 import { extractTicketKey, buildBranchName } from "../util/text";
 import {
   resolveRepoRoot,
@@ -37,7 +37,7 @@ export async function createBranchCommand(
     return;
   }
 
-  const cfg = readConfig();
+  const cfg = readConfigForRepo(repoRoot);
   const jira = await buildJiraService(ctx);
   if (!jira) {
     vscode.window.showErrorMessage("Loopline: Jira isn't configured. Run the setup wizard.");
@@ -55,7 +55,7 @@ export async function createBranchCommand(
   // 2. Build the branch name and (optionally) confirm/edit it.
   const prefix =
     cfg.branchTypeMapping[chosen.issueType] || cfg.branchTypeMapping["*"] || "feature";
-  let branchName = buildBranchName(prefix, chosen.key, chosen.summary);
+  let branchName = buildBranchName(prefix, chosen.key, chosen.summary, cfg.branchNameTemplate);
   if (cfg.confirmBranchName) {
     const edited = await promptBranchName(branchName, chosen);
     if (edited === undefined) {

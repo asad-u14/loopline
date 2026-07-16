@@ -6,6 +6,9 @@ import {
   buildBranchName,
   parseBranchName,
   buildCommitMessage,
+  renderTemplate,
+  DEFAULT_BRANCH_TEMPLATE,
+  DEFAULT_COMMIT_TEMPLATE,
 } from "../src/util/text";
 
 test("extractTicketKey: bare key", () => {
@@ -91,5 +94,54 @@ test("buildCommitMessage: normalises internal whitespace", () => {
   assert.equal(
     buildCommitMessage("fix", "ABC-1", "  too   many   spaces  "),
     "fix: ABC-1 too many spaces"
+  );
+});
+
+// ---- templates ---------------------------------------------------------------
+
+test("renderTemplate: substitutes known tokens", () => {
+  assert.equal(
+    renderTemplate("{a}/{b}-{c}", { a: "x", b: "y", c: "z" }),
+    "x/y-z"
+  );
+});
+
+test("renderTemplate: leaves unknown tokens untouched rather than dropping them", () => {
+  assert.equal(renderTemplate("{a}/{unknown}", { a: "x" }), "x/{unknown}");
+});
+
+test("buildBranchName: default template matches the original hardcoded shape", () => {
+  assert.equal(
+    buildBranchName("bugfix", "LPB-1234", "Some summary issue", DEFAULT_BRANCH_TEMPLATE),
+    "bugfix/LPB-1234-some-summary-issue"
+  );
+});
+
+test("buildBranchName: default template drops the separator when the slug is empty", () => {
+  assert.equal(buildBranchName("hotfix", "ABC-9", "   "), "hotfix/ABC-9");
+});
+
+test("buildBranchName: a custom template can reorder or reshape the pieces", () => {
+  assert.equal(
+    buildBranchName("feature", "LPB-1", "Add login", "{ticket}_{slug}"),
+    "LPB-1_add-login"
+  );
+  assert.equal(
+    buildBranchName("feature", "LPB-1", "Add login", "{prefix}/{ticket}"),
+    "feature/LPB-1"
+  );
+});
+
+test("buildCommitMessage: default template matches the original hardcoded shape", () => {
+  assert.equal(
+    buildCommitMessage("feat", "LPB-1234", "some summary issue", DEFAULT_COMMIT_TEMPLATE),
+    "feat: LPB-1234 some summary issue"
+  );
+});
+
+test("buildCommitMessage: a custom template can use a bracket style", () => {
+  assert.equal(
+    buildCommitMessage("feat", "LPB-1", "add login", "[{ticket}] {summary}"),
+    "[LPB-1] add login"
   );
 });

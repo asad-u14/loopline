@@ -2,6 +2,11 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.21.0] — 2026-07-16
+### Added
+- **Branch/commit name templates.** `loopline.branchNameTemplate` and `loopline.commitMessageTemplate` let a team reshape the generated names (tokens: `{prefix}`, `{ticket}`, `{slug}` / `{summary}`) instead of being locked into Loopline's original `prefix/ticket-slug` and `prefix: ticket summary` shapes. Defaults reproduce today's exact format byte-for-byte, so nothing changes unless a template is explicitly edited.
+- **Team-shared config via `.loopline.json`.** A new opt-in command, `Loopline: Create Project Config File`, scaffolds a `.loopline.json` at the repo root pre-filled with every shareable field from your current settings, so a team commits it once and everyone gets the same conventions on clone. Read-only and never created automatically — Loopline only reads the file if it already exists, and only ever writes it when this command is run explicitly. An explicit personal or workspace setting always wins over the file; it only fills gaps for settings nobody has customized. Covers branch/commit mappings, protected branches, default target branch, Jira transitions/scope, staging, single-commit mode, and the two new templates — never secrets, email, AI, or proxy settings.
+
 ## [0.20.1] — 2026-07-16
 ### Changed
 - **Standup summary now opens in a themed panel**, matching the ticket-details view, instead of a bare scratch editor — with a Copy to Clipboard button rather than manual selection.

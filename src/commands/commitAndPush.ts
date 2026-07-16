@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { GitService, RepoStatus } from "../services/git";
-import { readConfig, ensureConfigured, LooplineConfig } from "../util/config";
+import { readConfigForRepo, ensureConfigured, LooplineConfig } from "../util/config";
 import {
   parseBranchName,
   extractTicketKey,
@@ -58,7 +58,7 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
     return;
   }
 
-  const cfg = readConfig();
+  const cfg = readConfigForRepo(repoRoot);
   const branch = await git.currentBranch();
 
   // Pre-flight guard: don't commit directly onto a protected branch.
@@ -151,7 +151,7 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
   }
 
   const commitPrefix = mapCommitPrefix(cfg.commitTypeMapping, branchPrefix);
-  const message = buildCommitMessage(commitPrefix, ticketKey, summary);
+  const message = buildCommitMessage(commitPrefix, ticketKey, summary, cfg.commitMessageTemplate);
 
   // 4. Ask about the MR up front.
   const createMr = await vscode.window.showQuickPick(

@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -136,6 +136,10 @@
         "command": "loopline.standupSummary",
         "title": "Loopline: Generate Standup Summary",
         "icon": "$(megaphone)"
+      },
+      {
+        "command": "loopline.createProjectConfig",
+        "title": "Loopline: Create Project Config File"
       }
     ],
     "menus": {
@@ -293,6 +297,16 @@
             "chore": "chore"
           },
           "markdownDescription": "Maps a **branch prefix** to the commit-message prefix. e.g. branch prefix `feature` → commit prefix `feat`, producing `feat: LPB-1234 ...`."
+        },
+        "loopline.branchNameTemplate": {
+          "type": "string",
+          "default": "{prefix}/{ticket}-{slug}",
+          "markdownDescription": "Template for generated branch names. Tokens: `{prefix}`, `{ticket}`, `{slug}`. Defaults to Loopline's original shape (`feature/LPB-1234-some-summary`); change only if your team's convention differs. Note: `Loopline: Commit, Push & Create MR` recovers the ticket/prefix from the current branch name assuming the default shape — a very different template may fall back to asking for the ticket key manually."
+        },
+        "loopline.commitMessageTemplate": {
+          "type": "string",
+          "default": "{prefix}: {ticket} {summary}",
+          "markdownDescription": "Template for generated commit messages. Tokens: `{prefix}`, `{ticket}`, `{summary}`. Defaults to Loopline's original shape (`feat: LPB-1234 some summary`)."
         },
         "loopline.confirmBranchName": {
           "type": "boolean",

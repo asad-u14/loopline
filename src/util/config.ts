@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 import { logError } from "./log";
+import { DEFAULT_BRANCH_TEMPLATE, DEFAULT_COMMIT_TEMPLATE } from "./text";
+import { ProjectConfig, PROJECT_CONFIG_FILENAME, filterProjectConfig } from "./projectConfig";
 
 export type JiraType = "cloud" | "server";
 
@@ -36,6 +40,8 @@ export interface LooplineConfig {
   httpProxy: string;
   httpExtraCaCerts: string[];
   httpAllowInsecureTls: boolean;
+  branchNameTemplate: string;
+  commitMessageTemplate: string;
 }
 
 const SECRET_JIRA_TOKEN = "loopline.jira.token";
@@ -80,7 +86,97 @@ export function readConfig(): LooplineConfig {
     httpProxy: (c.get<string>("http.proxy") || "").trim(),
     httpExtraCaCerts: c.get<string[]>("http.extraCaCerts") ?? [],
     httpAllowInsecureTls: c.get<boolean>("http.allowInsecureTls") ?? false,
+    branchNameTemplate: c.get<string>("branchNameTemplate") || DEFAULT_BRANCH_TEMPLATE,
+    commitMessageTemplate: c.get<string>("commitMessageTemplate") || DEFAULT_COMMIT_TEMPLATE,
   };
+}
+
+let warnedInvalidProjectConfig = false;
+
+/**
+ * Read a project's committed `.loopline.json`, if present. Read-only: this never
+ * creates or writes the file — its mere absence means nothing changes. Invalid
+ * JSON is warned about once and otherwise ignored, rather than breaking the
+ * extension over a typo.
+ */
+export function loadProjectConfig(repoRoot: string): ProjectConfig | undefined {
+  const filePath = path.join(repoRoot, PROJECT_CONFIG_FILENAME);
+  if (!fs.existsSync(filePath)) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    return filterProjectConfig(parsed);
+  } catch (err) {
+    if (!warnedInvalidProjectConfig) {
+      warnedInvalidProjectConfig = true;
+      vscode.window.showWarningMessage(
+        `Loopline: ${PROJECT_CONFIG_FILENAME} is invalid JSON — ignoring it (${(err as Error).message}).`
+      );
+    }
+    return undefined;
+  }
+}
+
+/** True if the developer (or the workspace) explicitly set this setting themselves. */
+function isExplicitlySet(c: vscode.WorkspaceConfiguration, key: string): boolean {
+  const i = c.inspect(key);
+  return i?.globalValue !== undefined || i?.workspaceValue !== undefined || i?.workspaceFolderValue !== undefined;
+}
+
+/**
+ * Same as readConfig(), but fills gaps from the repo's `.loopline.json` (if any)
+ * for keys the developer hasn't explicitly set themselves. An explicit personal
+ * or workspace setting always wins over the team file — it only fills in for
+ * whoever hasn't customized something, never silently overrides a deliberate
+ * local choice.
+ */
+export function readConfigForRepo(repoRoot: string | undefined): LooplineConfig {
+  const cfg = readConfig();
+  if (!repoRoot) {
+    return cfg;
+  }
+  const project = loadProjectConfig(repoRoot);
+  if (!project) {
+    return cfg;
+  }
+
+  const c = vscode.workspace.getConfiguration("loopline");
+  const merged = { ...cfg };
+  if (project.branchTypeMapping && !isExplicitlySet(c, "branchTypeMapping")) {
+    merged.branchTypeMapping = project.branchTypeMapping;
+  }
+  if (project.commitTypeMapping && !isExplicitlySet(c, "commitTypeMapping")) {
+    merged.commitTypeMapping = project.commitTypeMapping;
+  }
+  if (project.protectedBranches && !isExplicitlySet(c, "protectedBranches")) {
+    merged.protectedBranches = project.protectedBranches;
+  }
+  if (project.defaultTargetBranch !== undefined && !isExplicitlySet(c, "defaultTargetBranch")) {
+    merged.defaultTargetBranch = project.defaultTargetBranch;
+  }
+  if (project.jiraTransitionOnBranch !== undefined && !isExplicitlySet(c, "jira.transitionOnBranch")) {
+    merged.jiraTransitionOnBranch = project.jiraTransitionOnBranch;
+  }
+  if (project.jiraTransitionOnMr !== undefined && !isExplicitlySet(c, "jira.transitionOnMr")) {
+    merged.jiraTransitionOnMr = project.jiraTransitionOnMr;
+  }
+  if (project.jiraTicketScope && !isExplicitlySet(c, "jira.ticketScope")) {
+    merged.jiraTicketScope = project.jiraTicketScope;
+  }
+  if (project.staging && !isExplicitlySet(c, "staging")) {
+    merged.staging = project.staging;
+  }
+  if (project.singleCommit && !isExplicitlySet(c, "singleCommit")) {
+    merged.singleCommit = project.singleCommit;
+  }
+  if (project.branchNameTemplate !== undefined && !isExplicitlySet(c, "branchNameTemplate")) {
+    merged.branchNameTemplate = project.branchNameTemplate;
+  }
+  if (project.commitMessageTemplate !== undefined && !isExplicitlySet(c, "commitMessageTemplate")) {
+    merged.commitMessageTemplate = project.commitMessageTemplate;
+  }
+  return merged;
 }
 
 /** Networking options shared by every outbound service call. */
