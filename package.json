@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -134,7 +134,8 @@
       },
       {
         "command": "loopline.standupSummary",
-        "title": "Loopline: Generate Standup Summary"
+        "title": "Loopline: Generate Standup Summary",
+        "icon": "$(megaphone)"
       }
     ],
     "menus": {
@@ -184,9 +185,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "loopline.tickets.refresh",
+          "command": "loopline.standupSummary",
           "when": "view == loopline.ticketsView",
           "group": "navigation@2"
+        },
+        {
+          "command": "loopline.tickets.refresh",
+          "when": "view == loopline.ticketsView",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [

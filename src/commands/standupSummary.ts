@@ -4,6 +4,7 @@ import { resolveRepoRoot, buildAnthropicService } from "../util/workspace";
 import { withCancellableProgress, isCancelled } from "../util/progress";
 import { logError } from "../util/log";
 import { groupCommitsByTicket, formatStandupFallback, startOfDay } from "../util/standup";
+import { showStandupSummary } from "../ui/standupPanel";
 
 export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promise<void> {
   const repoRoot = await resolveRepoRoot(ctx);
@@ -41,15 +42,16 @@ export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promi
     month: "short",
     day: "numeric",
   });
-  const fallback = formatStandupFallback(groups, dateLabel);
 
   const anthropic = await buildAnthropicService(ctx);
-  let text = fallback;
+  let markdown = formatStandupFallback(groups);
+  let aiGenerated = false;
   if (anthropic) {
     try {
-      text = await withCancellableProgress("Loopline: drafting standup summary…", (signal) =>
+      markdown = await withCancellableProgress("Loopline: drafting standup summary…", (signal) =>
         anthropic.generateStandupSummary({ groups, dateLabel }, signal)
       );
+      aiGenerated = true;
     } catch (err) {
       if (!isCancelled(err)) {
         vscode.window.showWarningMessage(
@@ -59,6 +61,5 @@ export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promi
     }
   }
 
-  const doc = await vscode.workspace.openTextDocument({ language: "markdown", content: text });
-  await vscode.window.showTextDocument(doc, { preview: true });
+  showStandupSummary({ dateLabel, markdown, aiGenerated });
 }

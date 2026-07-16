@@ -40,27 +40,23 @@ test("groupCommitsByTicket: empty input yields no groups", () => {
 });
 
 test("formatStandupFallback: lists each group with a commit count and bullets", () => {
-  const text = formatStandupFallback(
-    [
-      { ticketKey: "LPB-1", subjects: ["add login", "add token refresh"] },
-      { ticketKey: undefined, subjects: ["tidy up"] },
-    ],
-    "Wed, Jul 16"
-  );
-  assert.match(text, /Standup — Wed, Jul 16/);
+  const text = formatStandupFallback([
+    { ticketKey: "LPB-1", subjects: ["add login", "add token refresh"] },
+    { ticketKey: undefined, subjects: ["tidy up"] },
+  ]);
   assert.match(text, /\*\*LPB-1\*\* \(2 commits\)/);
   assert.match(text, /- add login/);
   assert.match(text, /\*\*Other\*\* \(1 commit\)/);
 });
 
 test("formatStandupFallback: singular commit count isn't pluralized", () => {
-  const text = formatStandupFallback([{ ticketKey: "LPB-1", subjects: ["add login"] }], "today");
+  const text = formatStandupFallback([{ ticketKey: "LPB-1", subjects: ["add login"] }]);
   assert.match(text, /\(1 commit\)/);
   assert.doesNotMatch(text, /\(1 commits\)/);
 });
 
-test("formatStandupFallback: no groups reports no commits, not an empty document", () => {
-  assert.equal(formatStandupFallback([], "today"), "No commits found for today.");
+test("formatStandupFallback: no groups reports nothing to summarize, not an empty document", () => {
+  assert.equal(formatStandupFallback([]), "No commits to summarize.");
 });
 
 test("startOfDay: zeroes out the time, keeps the calendar date", () => {

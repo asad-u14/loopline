@@ -35,12 +35,16 @@ export function groupCommitsByTicket(subjects: string[]): CommitGroup[] {
   return order.map((key) => ({ ticketKey: key, subjects: map.get(key)! }));
 }
 
-/** Deterministic fallback used when AI is off, unavailable, or fails. */
-export function formatStandupFallback(groups: CommitGroup[], dateLabel: string): string {
+/**
+ * Deterministic fallback used when AI is off, unavailable, or fails. Body only —
+ * the date/title is rendered separately by whatever displays this (the standup
+ * webview panel), so it isn't duplicated inside the text itself.
+ */
+export function formatStandupFallback(groups: CommitGroup[]): string {
   if (groups.length === 0) {
-    return `No commits found for ${dateLabel}.`;
+    return "No commits to summarize.";
   }
-  const lines: string[] = [`Standup — ${dateLabel}`, ""];
+  const lines: string[] = [];
   for (const g of groups) {
     const label = g.ticketKey ?? "Other";
     lines.push(`**${label}** (${g.subjects.length} commit${g.subjects.length === 1 ? "" : "s"})`);

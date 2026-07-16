@@ -2,6 +2,11 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.20.1] — 2026-07-16
+### Changed
+- **Standup summary now opens in a themed panel**, matching the ticket-details view, instead of a bare scratch editor — with a Copy to Clipboard button rather than manual selection.
+- **Added a title-bar icon** for it in the Tickets view (next to the sprint filter toggle), so it no longer requires the Command Palette.
+
 ## [0.20.0] — 2026-07-16
 ### Added
 - **Standup summary generator.** `Loopline: Generate Standup Summary` reads today's commits by you across all local branches, groups them by the ticket key already embedded in each commit message, and opens a draft in a scratch editor to copy. With AI enabled, each ticket's commits are rephrased into one short line grounded only in what actually happened; otherwise a plain bulleted list grouped by ticket is used. No new settings — reuses the existing AI enable/model/key configuration.
