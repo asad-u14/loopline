@@ -11,6 +11,7 @@ import {
 import { withCancellableProgress, isCancelled } from "../util/progress";
 import { log, logError } from "../util/log";
 import { showTicketDetail } from "../ui/ticketDetailPanel";
+import { recordBranchCreated } from "../util/impactStore";
 
 interface ChosenTicket {
   key: string;
@@ -104,6 +105,7 @@ export async function createBranchCommand(
       vscode.window.showInformationMessage(`Loopline: switched to ${branchName}`);
     }
     log(`created branch ${branchName}${baseChoice.startPoint ? ` from ${baseChoice.startPoint}` : ""}`);
+    await recordBranchCreated(ctx);
   } catch (err) {
     logError("branch creation failed", err);
     vscode.window.showErrorMessage(`Loopline: ${(err as Error).message}`);

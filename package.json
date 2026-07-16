@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -127,6 +127,10 @@
         "command": "loopline.tickets.openDetails",
         "title": "Loopline: Open Ticket in VS Code",
         "icon": "$(preview)"
+      },
+      {
+        "command": "loopline.showImpactDetails",
+        "title": "Loopline: Show Impact"
       }
     ],
     "menus": {
@@ -430,6 +434,21 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Tint each ticket's icon by issue type (Bug red, Story green, Epic purple, Sub-task orange, Task/other blue) instead of the plain theme-foreground icon."
+        },
+        "loopline.impact.minutesPerBranch": {
+          "type": "number",
+          "default": 15,
+          "markdownDescription": "Minutes assumed saved per branch Loopline creates for you, used only for the estimate in the sidebar's Impact row."
+        },
+        "loopline.impact.minutesPerCommit": {
+          "type": "number",
+          "default": 5,
+          "markdownDescription": "Minutes assumed saved per commit + push Loopline handles, used only for the estimate in the sidebar's Impact row."
+        },
+        "loopline.impact.minutesPerMr": {
+          "type": "number",
+          "default": 10,
+          "markdownDescription": "Minutes assumed saved per merge request Loopline creates, used only for the estimate in the sidebar's Impact row."
         }
       }
     }

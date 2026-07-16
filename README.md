@@ -46,6 +46,9 @@ feat: LPB-1234 some summary issue
 
 **One commit per MR.** Re-running the command on a branch that already has commits offers to squash them with your new work into a single commit and force-push with `--force-with-lease` (which fails safely if someone else pushed). You're always asked before history is rewritten; set `loopline.singleCommit` to `off` to keep every commit. It checks for an existing open MR first to avoid duplicates, and can pull the Jira ticket description into the MR body.
 
+**Impact footer**
+Once you've created at least one branch, commit, or MR through Loopline, a row appears at the bottom of the sidebar: `12 branches · 8 commits · 5 MRs · ~3.5h saved`. It's hidden entirely until there's something to show. The time-saved figure is an estimate — `branches × loopline.impact.minutesPerBranch + commits × loopline.impact.minutesPerCommit + MRs × loopline.impact.minutesPerMr` (defaults: 15 / 5 / 10 minutes) — and the assumptions are always shown alongside it, in the tooltip and in the full breakdown you get by clicking the row (which also offers to reset the counters).
+
 **Status-bar ticket indicator**
 When you're on a branch that follows the convention, the status bar shows the ticket (e.g. `$(git-branch) LPB-1234`). Click it for quick actions: **Open Jira ticket**, **Open merge request** (finds the open MR for the current branch), **Copy ticket key**, or jump straight into create-branch / commit-push. It updates automatically when you switch branches — including from the terminal.
 

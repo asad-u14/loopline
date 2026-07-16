@@ -7,6 +7,7 @@ import { diagnoseConnectionCommand } from "./commands/diagnose";
 import { TicketStatusBar } from "./ui/statusBar";
 import { TicketsTreeProvider, keyFromArg } from "./ui/ticketsTree";
 import { openTicketDetailsCommand } from "./commands/ticketDetails";
+import { showImpactDetailsCommand } from "./commands/impactDetails";
 import { ticketFromArg } from "./util/tree-helpers";
 import { initLog, log, logError, showLog } from "./util/log";
 import { resetHttpPlanLog } from "./util/http-client";
@@ -63,6 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
     await statusBar.refresh();
     tickets.touch();
   });
+  register("loopline.showImpactDetails", () => showImpactDetailsCommand(context));
 
   register("loopline.tickets.refresh", async () => tickets.refresh());
 

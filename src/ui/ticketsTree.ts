@@ -18,6 +18,8 @@ import {
   shouldGroupByStatus,
   statusCategoryRank,
 } from "../util/tree-helpers";
+import { hasAnyActivity, formatImpactLine, formatImpactTooltip } from "../util/impact";
+import { getImpactStats } from "../util/impactStore";
 
 export { keyFromArg };
 
@@ -26,7 +28,8 @@ type Node =
   | { t: "current"; ticket?: string; branch: string }
   | { t: "statusGroup"; status: string; category?: string; issues: JiraIssueSummary[] }
   | { t: "ticket"; issue: JiraIssueSummary; grouped: boolean }
-  | { t: "message"; label: string; icon?: string; command?: vscode.Command };
+  | { t: "message"; label: string; icon?: string; command?: vscode.Command }
+  | { t: "impact" };
 
 export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
   private readonly _onDidChange = new vscode.EventEmitter<Node | undefined | void>();
@@ -171,7 +174,29 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
         }
         return item;
       }
+      case "impact": {
+        const stats = getImpactStats(this.ctx);
+        const rates = this.impactRates();
+        const item = new vscode.TreeItem(
+          formatImpactLine(stats, rates),
+          vscode.TreeItemCollapsibleState.None
+        );
+        item.iconPath = new vscode.ThemeIcon("graph-line");
+        item.tooltip = formatImpactTooltip(stats, rates);
+        item.contextValue = "impact";
+        item.command = { command: "loopline.showImpactDetails", title: "Loopline Impact" };
+        return item;
+      }
     }
+  }
+
+  private impactRates() {
+    const cfg = readConfig();
+    return {
+      minutesPerBranch: cfg.impactMinutesPerBranch,
+      minutesPerCommit: cfg.impactMinutesPerCommit,
+      minutesPerMr: cfg.impactMinutesPerMr,
+    };
   }
 
   async getChildren(element?: Node): Promise<Node[]> {
@@ -181,7 +206,7 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
       if (missing.length > 0) {
         return [];
       }
-      return [
+      const nodes: Node[] = [
         { t: "section", id: "current", label: "Current" },
         {
           t: "section",
@@ -189,6 +214,11 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
           label: scopeSectionLabel(this.scope, this.sprintFilterApplied),
         },
       ];
+      // Pinned last, and only once there's something to show.
+      if (hasAnyActivity(getImpactStats(this.ctx))) {
+        nodes.push({ t: "impact" });
+      }
+      return nodes;
     }
 
     if (element.t === "section" && element.id === "current") {

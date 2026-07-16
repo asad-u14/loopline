@@ -143,6 +143,12 @@ export class AnthropicService {
     if (status === 401) {
       return new AnthropicError("Anthropic rejected the API key (401). Set it again via 'Loopline: Set AI (Anthropic) API Key'.", status);
     }
+    if (status === 403) {
+      return new AnthropicError(
+        "Anthropic rejected the request (403) — the key is valid but not permitted. Usually this means the Console organization has no billing/credits set up, the key was created in the wrong workspace, or a proxy/firewall between you and api.anthropic.com is blocking or rewriting the request. Check console.anthropic.com, and if you're behind a proxy set `loopline.http.proxy`.",
+        status
+      );
+    }
     if (status === 400 && typeof apiMsg === "string" && /model/i.test(apiMsg)) {
       return new AnthropicError(`Model not accepted: ${apiMsg}. Check \`loopline.ai.model\`.`, status);
     }

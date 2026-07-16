@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.19.0] — 2026-07-16
+### Added
+- **Impact footer.** Once you've created at least one branch, commit, or MR through Loopline, a row pins to the bottom of the sidebar: `12 branches · 8 commits · 5 MRs · ~3.5h saved`. Hidden until there's something to show. The time-saved figure is a clearly-labeled estimate (`loopline.impact.minutesPerBranch` / `minutesPerCommit` / `minutesPerMr`, defaults 15 / 5 / 10) — the assumptions are always visible alongside it. Clicking the row opens the full breakdown with a "Reset counters" option. Added `Loopline: Show Impact`.
+
 ## [0.18.0] — 2026-07-16
 ### Added
 - **AI diff-vs-ticket check (opt-in).** After staging and before the commit, Loopline can ask the AI whether the diff actually addresses what the ticket asks for, comparing it against the ticket's summary and description. A clean verdict is silent; a possible gap pauses with a "Commit anyway / Cancel" prompt — advisory only, and the check itself never blocks a commit if it fails or is cancelled. Off by default; turn on with `loopline.ai.checkDiffAgainstTicket` (requires `loopline.ai.enabled`).

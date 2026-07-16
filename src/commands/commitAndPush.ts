@@ -7,6 +7,7 @@ import {
   buildCommitMessage,
 } from "../util/text";
 import { parseTicketCheckVerdict } from "../util/ai-prompt";
+import { recordCommitPushed, recordMrOpened } from "../util/impactStore";
 import {
   resolveRepoRoot,
   buildJiraService,
@@ -244,9 +245,11 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
   log(
     `committed ${changedFiles.length} file(s)${squash.squashing ? ` (squashed ${squash.existing} commit(s))` : ""}`
   );
+  await recordCommitPushed(ctx);
 
   if (createMr.value !== "mr") {
     vscode.window.showInformationMessage(`Loopline: pushed "${message}".`);
+    await vscode.commands.executeCommand("loopline.refreshTicketStatus");
     return;
   }
 
@@ -315,6 +318,8 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
         signal
       )
     );
+
+    await recordMrOpened(ctx);
 
     const open = await vscode.window.showInformationMessage(
       `Loopline: created MR !${mr.iid}.`,

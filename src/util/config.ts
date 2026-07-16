@@ -28,6 +28,9 @@ export interface LooplineConfig {
   updateBaseBeforeBranch: "ask" | "always" | "never";
   groupTicketsByStatus: boolean;
   colorfulTicketIcons: boolean;
+  impactMinutesPerBranch: number;
+  impactMinutesPerCommit: number;
+  impactMinutesPerMr: number;
   staging: "respectStaged" | "pick" | "all";
   singleCommit: "squash" | "off";
   httpProxy: string;
@@ -68,6 +71,9 @@ export function readConfig(): LooplineConfig {
       (c.get<string>("updateBaseBeforeBranch") as "ask" | "always" | "never") || "ask",
     groupTicketsByStatus: c.get<boolean>("sidebar.groupByStatus") ?? true,
     colorfulTicketIcons: c.get<boolean>("sidebar.colorfulIcons") ?? true,
+    impactMinutesPerBranch: c.get<number>("impact.minutesPerBranch") ?? 15,
+    impactMinutesPerCommit: c.get<number>("impact.minutesPerCommit") ?? 5,
+    impactMinutesPerMr: c.get<number>("impact.minutesPerMr") ?? 10,
     staging:
       (c.get<string>("staging") as "respectStaged" | "pick" | "all") || "respectStaged",
     singleCommit: (c.get<string>("singleCommit") as "squash" | "off") || "squash",
