@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -344,6 +344,11 @@
           "type": "number",
           "default": 60000,
           "markdownDescription": "Maximum diff size (in bytes) sent to the AI. Larger diffs are truncated and flagged in the prompt."
+        },
+        "loopline.ai.checkDiffAgainstTicket": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Opt in to an AI check, run after staging and before the commit, that compares your diff against the ticket's summary/description and warns about anything the ticket mentions that the diff doesn't seem to address. You can always commit anyway. Requires `loopline.ai.enabled`."
         },
         "loopline.showTicketDetailsOnBranch": {
           "type": "boolean",

@@ -88,6 +88,57 @@ export const PLAN_SYSTEM_PROMPT = [
   "Keep it tight and skimmable. This is a starting map, not final code — the developer will validate it.",
 ].join("\n");
 
+// ---- diff-vs-ticket check ---------------------------------------------------
+
+export interface TicketCheckPromptInput {
+  ticketKey: string;
+  ticketSummary: string;
+  ticketDescription: string;
+  diff: string;
+}
+
+export const TICKET_CHECK_SYSTEM_PROMPT = [
+  "You are reviewing a code diff against a Jira ticket, checking whether the diff actually addresses what the ticket asks for.",
+  "Compare the diff only to what the ticket's summary and description state — requirements, acceptance criteria, or edge cases they explicitly mention.",
+  "Do not invent problems that aren't grounded in the ticket text, and do not flag ordinary implementation choices as gaps.",
+  "If the diff is truncated, account for that and don't flag something you simply couldn't see.",
+  "Respond in exactly this format:",
+  "Line 1: `VERDICT: LOOKS COMPLETE` or `VERDICT: POSSIBLE GAPS` — nothing else on that line.",
+  "If POSSIBLE GAPS: a short Markdown bullet list, each bullet naming one specific thing the ticket mentions that the diff doesn't appear to address.",
+  "If LOOKS COMPLETE: one short sentence confirming why, no bullet list.",
+].join("\n");
+
+export function buildTicketCheckUserPrompt(input: TicketCheckPromptInput, maxDiffBytes: number): string {
+  const { text: diffText, truncated } = truncateDiff(input.diff, maxDiffBytes);
+
+  const parts: string[] = [];
+  parts.push(`Jira ticket: ${input.ticketKey}`);
+  if (input.ticketSummary) {
+    parts.push(`Ticket summary: ${input.ticketSummary}`);
+  }
+  parts.push(
+    input.ticketDescription?.trim()
+      ? `Ticket description:\n${input.ticketDescription.trim()}`
+      : "Ticket description: (none provided)"
+  );
+  parts.push(
+    truncated
+      ? `Diff (truncated to fit; judge only what's visible and don't flag anything you can't see):\n\n\`\`\`diff\n${diffText}\n\`\`\``
+      : `Diff:\n\n\`\`\`diff\n${diffText}\n\`\`\``
+  );
+  parts.push("Check the diff against the ticket now.");
+  return parts.join("\n\n");
+}
+
+/** Split the model's response into a pass/fail verdict and the human-readable detail. */
+export function parseTicketCheckVerdict(response: string): { looksComplete: boolean; detail: string } {
+  const lines = (response ?? "").split("\n");
+  const first = (lines[0] ?? "").trim().toUpperCase();
+  const looksComplete = first.startsWith("VERDICT: LOOKS COMPLETE");
+  const rest = lines.slice(1).join("\n").trim();
+  return { looksComplete, detail: rest || response.trim() };
+}
+
 export function buildPlanUserPrompt(input: PlanPromptInput): string {
   const parts: string[] = [];
   parts.push(`Jira ticket: ${input.ticketKey}`);

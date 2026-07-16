@@ -9,6 +9,9 @@ import {
   PlanPromptInput,
   PLAN_SYSTEM_PROMPT,
   buildPlanUserPrompt,
+  TicketCheckPromptInput,
+  TICKET_CHECK_SYSTEM_PROMPT,
+  buildTicketCheckUserPrompt,
 } from "../util/ai-prompt";
 
 export interface AnthropicOptions {
@@ -89,6 +92,30 @@ export class AnthropicService {
           model: this.opts.model,
           max_tokens: 1500,
           system: PLAN_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userPrompt }],
+        },
+        { signal }
+      );
+      const text = extractText(res.data);
+      if (!text.trim()) {
+        throw new AnthropicError("The model returned an empty response.");
+      }
+      return text.trim();
+    } catch (err) {
+      throw this.toFriendlyError(err);
+    }
+  }
+
+  /** Checks whether a diff appears to address a Jira ticket's stated requirements. */
+  async checkDiffAgainstTicket(input: TicketCheckPromptInput, signal?: AbortSignal): Promise<string> {
+    const userPrompt = buildTicketCheckUserPrompt(input, this.opts.maxDiffBytes);
+    try {
+      const res = await this.http.post(
+        "/v1/messages",
+        {
+          model: this.opts.model,
+          max_tokens: 500,
+          system: TICKET_CHECK_SYSTEM_PROMPT,
           messages: [{ role: "user", content: userPrompt }],
         },
         { signal }

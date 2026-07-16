@@ -22,6 +22,7 @@ export interface LooplineConfig {
   aiModel: string;
   aiBaseUrl: string;
   aiMaxDiffBytes: number;
+  aiCheckDiffAgainstTicket: boolean;
   showTicketDetailsOnBranch: boolean;
   baseBranch: string;
   updateBaseBeforeBranch: "ask" | "always" | "never";
@@ -60,6 +61,7 @@ export function readConfig(): LooplineConfig {
     aiModel: (c.get<string>("ai.model") || "claude-sonnet-5").trim(),
     aiBaseUrl: (c.get<string>("ai.baseUrl") || "https://api.anthropic.com").trim().replace(/\/+$/, ""),
     aiMaxDiffBytes: c.get<number>("ai.maxDiffBytes") ?? 60000,
+    aiCheckDiffAgainstTicket: c.get<boolean>("ai.checkDiffAgainstTicket") ?? false,
     showTicketDetailsOnBranch: c.get<boolean>("showTicketDetailsOnBranch") ?? true,
     baseBranch: (c.get<string>("baseBranch") || "").trim(),
     updateBaseBeforeBranch:

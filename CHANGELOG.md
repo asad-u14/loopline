@@ -2,6 +2,13 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.18.0] — 2026-07-16
+### Added
+- **AI diff-vs-ticket check (opt-in).** After staging and before the commit, Loopline can ask the AI whether the diff actually addresses what the ticket asks for, comparing it against the ticket's summary and description. A clean verdict is silent; a possible gap pauses with a "Commit anyway / Cancel" prompt — advisory only, and the check itself never blocks a commit if it fails or is cancelled. Off by default; turn on with `loopline.ai.checkDiffAgainstTicket` (requires `loopline.ai.enabled`).
+
+### Changed
+- The Jira ticket fetch used for the MR description now happens once, earlier in the commit flow, so the new pre-commit check and the MR description share the same fetch instead of hitting Jira twice.
+
 ## [0.17.0] — 2026-07-16
 ### Added
 - **Colorful ticket icons.** Each ticket's icon is now tinted by issue type — Bug red, Story green, Epic purple, Sub-task orange, Task/other blue — so you can spot a type at a glance without reading the row. Turn it off with `loopline.sidebar.colorfulIcons`.

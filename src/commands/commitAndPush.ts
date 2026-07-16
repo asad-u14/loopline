@@ -6,6 +6,7 @@ import {
   extractTicketKey,
   buildCommitMessage,
 } from "../util/text";
+import { parseTicketCheckVerdict } from "../util/ai-prompt";
 import {
   resolveRepoRoot,
   buildJiraService,
@@ -103,6 +104,25 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
     branchPrefix = prefixPick;
   }
 
+  // Fetch Jira ticket details when either the MR-description-include flag or AI is
+  // on, so both the pre-commit ticket check and the MR description can use it.
+  let jiraDescription = "";
+  let jiraSummary = "";
+  if (cfg.includeJiraDescription || cfg.aiEnabled) {
+    const jira = await buildJiraService(ctx);
+    if (jira) {
+      try {
+        const issue = await withCancellableProgress("Loopline: fetching ticket details…", (signal) =>
+          jira.getIssue(ticketKey, signal)
+        );
+        jiraSummary = issue.summary;
+        jiraDescription = issue.description;
+      } catch {
+        /* non-fatal (including cancel) */
+      }
+    }
+  }
+
   // 2. Work out exactly what will be committed. Staging is the developer's
   //     statement of intent, so we honor it rather than sweeping up the repo.
   const status = await git.getStatus();
@@ -151,22 +171,20 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
     return; // cancelled
   }
 
-  // 6. Do the git work. Stage first, then read the diff from the INDEX so that
-  //    what the AI/MR describes is exactly what was committed.
+  // 6. Stage now, so a pre-commit ticket check (if enabled) sees exactly what's
+  //    about to be committed. Read from the INDEX, not the working tree.
   let changedFiles: string[] = [];
   let preCommitDiff = "";
   try {
     await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: "Loopline: commit & push…", cancellable: false },
-      async (progress) => {
-        progress.report({ message: "staging" });
+      { location: vscode.ProgressLocation.Notification, title: "Loopline: staging…", cancellable: false },
+      async () => {
         await applyStagingPlan(git, plan);
 
         if (!(await git.hasStagedChanges()) && !squash.squashing) {
           throw new Error("nothing ended up staged — aborting before commit.");
         }
 
-        progress.report({ message: "committing" });
         if (squash.squashing && squash.mergeBase) {
           // Collapse existing branch commits + newly staged work into one commit.
           // --soft keeps the index, so unstaged work stays untouched.
@@ -176,7 +194,38 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
         // Read from the index: this is exactly what the commit will contain.
         changedFiles = await git.listStagedFiles();
         preCommitDiff = cfg.aiEnabled ? await git.getStagedDiff() : "";
+      }
+    );
+  } catch (err) {
+    logError("staging failed", err);
+    vscode.window.showErrorMessage(`Loopline: ${(err as Error).message}`);
+    return;
+  }
 
+  // 7. Optional, opt-in (`loopline.ai.checkDiffAgainstTicket`): before committing,
+  //    ask the AI whether the diff addresses the ticket. Purely advisory — any
+  //    failure or a "looks complete" verdict falls through silently; only a
+  //    POSSIBLE GAPS verdict pauses, and the user always has the final call.
+  if (cfg.aiEnabled && cfg.aiCheckDiffAgainstTicket && preCommitDiff.trim()) {
+    const proceed = await confirmDiffMatchesTicket(
+      ctx,
+      ticketKey,
+      jiraSummary || summary,
+      jiraDescription,
+      preCommitDiff
+    );
+    if (!proceed) {
+      vscode.window.showInformationMessage("Loopline: commit cancelled — staged changes are untouched.");
+      return;
+    }
+  }
+
+  // 8. Commit + push.
+  try {
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "Loopline: commit & push…", cancellable: false },
+      async (progress) => {
+        progress.report({ message: "committing" });
         await git.commit(message);
 
         progress.report({ message: "pushing" });
@@ -201,7 +250,7 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
     return;
   }
 
-  // 6. Create (or find existing) MR.
+  // 9. Create (or find existing) MR.
   const gitlab = await buildGitLabService(ctx);
   if (!gitlab) {
     vscode.window.showErrorMessage("Loopline: GitLab isn't configured. Run setup.");
@@ -213,24 +262,6 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
       "Loopline: couldn't determine the GitLab project. Set `loopline.gitlab.projectId`."
     );
     return;
-  }
-
-  // Fetch Jira ticket details when either the MR-description-include flag or AI is on.
-  let jiraDescription = "";
-  let jiraSummary = "";
-  if (cfg.includeJiraDescription || cfg.aiEnabled) {
-    const jira = await buildJiraService(ctx);
-    if (jira) {
-      try {
-        const issue = await withCancellableProgress("Loopline: fetching ticket details…", (signal) =>
-          jira.getIssue(ticketKey, signal)
-        );
-        jiraSummary = issue.summary;
-        jiraDescription = issue.description;
-      } catch {
-        /* non-fatal (including cancel) */
-      }
-    }
   }
 
   const fallbackDescription = buildMrDescription(
@@ -305,6 +336,49 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
     }
     vscode.window.showErrorMessage(`Loopline: ${(err as Error).message}`);
   }
+}
+
+/**
+ * Ask the AI whether the diff addresses what the ticket asks for. Non-blocking on
+ * any failure (disabled, no key, API error, or cancelling the check itself) — only
+ * a POSSIBLE GAPS verdict pauses to ask, and the user always has the final call.
+ */
+async function confirmDiffMatchesTicket(
+  ctx: vscode.ExtensionContext,
+  ticketKey: string,
+  ticketSummary: string,
+  ticketDescription: string,
+  diff: string
+): Promise<boolean> {
+  const anthropic = await buildAnthropicService(ctx);
+  if (!anthropic) {
+    return true;
+  }
+
+  let response: string;
+  try {
+    response = await withCancellableProgress("Loopline: checking diff against ticket…", (signal) =>
+      anthropic.checkDiffAgainstTicket({ ticketKey, ticketSummary, ticketDescription, diff }, signal)
+    );
+  } catch (err) {
+    if (!isCancelled(err)) {
+      log(`ticket-diff check failed, continuing without it: ${(err as Error).message}`);
+    }
+    return true;
+  }
+
+  const { looksComplete, detail } = parseTicketCheckVerdict(response);
+  if (looksComplete) {
+    return true;
+  }
+
+  const choice = await vscode.window.showWarningMessage(
+    `Loopline: the diff may not fully address ${ticketKey}.`,
+    { modal: true, detail },
+    "Commit anyway",
+    "Cancel"
+  );
+  return choice === "Commit anyway";
 }
 
 function mapCommitPrefix(mapping: Record<string, string>, branchPrefix: string): string {

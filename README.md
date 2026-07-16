@@ -55,7 +55,10 @@ Optionally move the ticket through your workflow as you work: to *In Progress* w
 **AI-generated MR descriptions (opt-in)**
 Instead of a bare file list, Loopline can draft a real MR body from the branch **diff** and the **ticket** (summary, description) using the Anthropic API: a Summary, the notable Changes, the Why tied back to the ticket, and Testing notes. It opens in an editor for you to review and edit before the MR is created, and falls back to the deterministic file-list description if AI is off, the key is missing, or the call fails.
 
-> **Privacy:** this feature is off by default. When enabled, it sends your diff and ticket text to the Anthropic API. If your code can't leave your environment, either leave it disabled or point `loopline.ai.baseUrl` at your company's Anthropic-compatible gateway. The API key is stored in VS Code Secret Storage.
+**AI diff-vs-ticket check (opt-in)**
+After staging and before the commit, Loopline can ask the AI whether your diff actually addresses what the ticket asks for — comparing it against the ticket's summary and description. If it looks complete, you're never interrupted. If it spots something the ticket mentions that the diff doesn't seem to cover, it pauses with a "Commit anyway / Cancel" prompt — advisory only, never a hard block. Turn it on with `loopline.ai.checkDiffAgainstTicket` (requires `loopline.ai.enabled`).
+
+> **Privacy:** both AI features are off by default. When enabled, they send your diff and ticket text to the Anthropic API. If your code can't leave your environment, either leave them disabled or point `loopline.ai.baseUrl` at your company's Anthropic-compatible gateway. The API key is stored in VS Code Secret Storage.
 
 ---
 
@@ -210,6 +213,6 @@ Common codes and what they mean:
 - **MR body** — `buildMrDescription()` in `src/commands/commitAndPush.ts`.
 - **Jira field mapping** — `src/services/jira.ts` (`getIssue`).
 - **Remote URL parsing** — `parseRemoteUrl()` in `src/services/git.ts`.
-- **Next high-value additions:** auto-transition the Jira ticket to *In Progress* / *In Review*, MR reviewers/labels/draft support, and unit tests around `src/util/text.ts`.
+- **Next high-value additions:** MR reviewers/labels/draft support, and unit tests around `src/util/text.ts`.
 
 MIT licensed.

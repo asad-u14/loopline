@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { truncateDiff, buildMrUserPrompt, buildPlanUserPrompt } from "../src/util/ai-prompt";
+import {
+  truncateDiff,
+  buildMrUserPrompt,
+  buildPlanUserPrompt,
+  buildTicketCheckUserPrompt,
+  parseTicketCheckVerdict,
+} from "../src/util/ai-prompt";
 
 test("truncateDiff: under budget is untouched", () => {
   const r = truncateDiff("small diff", 1000);
@@ -96,4 +102,58 @@ test("buildPlanUserPrompt: handles missing description and empty layout", () => 
   });
   assert.match(prompt, /none provided/i);
   assert.match(prompt, /not available/i);
+});
+
+// ---- diff-vs-ticket check ---------------------------------------------------
+
+test("buildTicketCheckUserPrompt: includes ticket and diff", () => {
+  const prompt = buildTicketCheckUserPrompt(
+    {
+      ticketKey: "LPB-42",
+      ticketSummary: "Add rate limiting",
+      ticketDescription: "Throttle login attempts to 5/min",
+      diff: "diff --git a/src/auth.ts b/src/auth.ts",
+    },
+    60000
+  );
+  assert.match(prompt, /LPB-42/);
+  assert.match(prompt, /Add rate limiting/);
+  assert.match(prompt, /Throttle login attempts/);
+  assert.match(prompt, /```diff/);
+});
+
+test("buildTicketCheckUserPrompt: handles missing description", () => {
+  const prompt = buildTicketCheckUserPrompt(
+    { ticketKey: "LPB-9", ticketSummary: "Thing", ticketDescription: "", diff: "d" },
+    60000
+  );
+  assert.match(prompt, /none provided/i);
+});
+
+test("buildTicketCheckUserPrompt: notes truncation when diff is large", () => {
+  const prompt = buildTicketCheckUserPrompt(
+    { ticketKey: "LPB-1", ticketSummary: "", ticketDescription: "", diff: "y".repeat(200000) },
+    1000
+  );
+  assert.match(prompt, /truncated/i);
+});
+
+test("parseTicketCheckVerdict: recognizes a clean pass", () => {
+  const r = parseTicketCheckVerdict("VERDICT: LOOKS COMPLETE\nHandles the throttling described in the ticket.");
+  assert.equal(r.looksComplete, true);
+  assert.match(r.detail, /throttling/);
+});
+
+test("parseTicketCheckVerdict: recognizes gaps and keeps the bullet list as detail", () => {
+  const r = parseTicketCheckVerdict(
+    "VERDICT: POSSIBLE GAPS\n- Ticket asks for a 5/min limit; diff only adds a 10/min limit.\n- No test for the throttle window."
+  );
+  assert.equal(r.looksComplete, false);
+  assert.match(r.detail, /5\/min/);
+  assert.match(r.detail, /No test/);
+});
+
+test("parseTicketCheckVerdict: missing/malformed verdict line defaults to gaps, not silently passing", () => {
+  const r = parseTicketCheckVerdict("Some unexpected response shape.");
+  assert.equal(r.looksComplete, false);
 });
