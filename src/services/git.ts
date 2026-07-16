@@ -336,6 +336,42 @@ export class GitService {
   }
 
   /**
+   * Subjects of the current git user's commits since `sinceIso`, across all local
+   * branches, newest-work-last (so a group reads like a story). Deduplicated by
+   * hash, since the same commit can be reachable from more than one branch.
+   */
+  async listMyCommitsSince(sinceIso: string): Promise<string[]> {
+    let email = "";
+    try {
+      email = (await this.git.raw(["config", "user.email"])).trim();
+    } catch {
+      /* no user.email configured — fall back to unfiltered log below */
+    }
+    try {
+      const args = ["log", "--branches", "--reverse", `--since=${sinceIso}`, "--format=%H%x1f%s"];
+      if (email) {
+        args.push(`--author=${email}`);
+      }
+      const out = await this.git.raw(args);
+      const seen = new Set<string>();
+      const subjects: string[] = [];
+      for (const line of out.split("\n")) {
+        const [hash, subject] = line.split("\x1f");
+        if (!hash || seen.has(hash)) {
+          continue;
+        }
+        seen.add(hash);
+        if (subject?.trim()) {
+          subjects.push(subject.trim());
+        }
+      }
+      return subjects;
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Move HEAD back to `ref` while leaving the index and working tree untouched.
    * Committing afterwards collapses everything since `ref` into one commit.
    */

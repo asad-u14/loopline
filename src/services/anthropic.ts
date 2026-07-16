@@ -12,6 +12,9 @@ import {
   TicketCheckPromptInput,
   TICKET_CHECK_SYSTEM_PROMPT,
   buildTicketCheckUserPrompt,
+  StandupPromptInput,
+  STANDUP_SYSTEM_PROMPT,
+  buildStandupUserPrompt,
 } from "../util/ai-prompt";
 
 export interface AnthropicOptions {
@@ -116,6 +119,30 @@ export class AnthropicService {
           model: this.opts.model,
           max_tokens: 500,
           system: TICKET_CHECK_SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userPrompt }],
+        },
+        { signal }
+      );
+      const text = extractText(res.data);
+      if (!text.trim()) {
+        throw new AnthropicError("The model returned an empty response.");
+      }
+      return text.trim();
+    } catch (err) {
+      throw this.toFriendlyError(err);
+    }
+  }
+
+  /** Drafts a standup update from today's commits, grouped by ticket. */
+  async generateStandupSummary(input: StandupPromptInput, signal?: AbortSignal): Promise<string> {
+    const userPrompt = buildStandupUserPrompt(input);
+    try {
+      const res = await this.http.post(
+        "/v1/messages",
+        {
+          model: this.opts.model,
+          max_tokens: 700,
+          system: STANDUP_SYSTEM_PROMPT,
           messages: [{ role: "user", content: userPrompt }],
         },
         { signal }

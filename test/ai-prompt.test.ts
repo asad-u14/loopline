@@ -6,6 +6,7 @@ import {
   buildPlanUserPrompt,
   buildTicketCheckUserPrompt,
   parseTicketCheckVerdict,
+  buildStandupUserPrompt,
 } from "../src/util/ai-prompt";
 
 test("truncateDiff: under budget is untouched", () => {
@@ -156,4 +157,22 @@ test("parseTicketCheckVerdict: recognizes gaps and keeps the bullet list as deta
 test("parseTicketCheckVerdict: missing/malformed verdict line defaults to gaps, not silently passing", () => {
   const r = parseTicketCheckVerdict("Some unexpected response shape.");
   assert.equal(r.looksComplete, false);
+});
+
+// ---- standup summary ---------------------------------------------------------
+
+test("buildStandupUserPrompt: includes the date, each ticket, and its commits", () => {
+  const prompt = buildStandupUserPrompt({
+    dateLabel: "Wed, Jul 16",
+    groups: [
+      { ticketKey: "LPB-1", subjects: ["add login", "add token refresh"] },
+      { ticketKey: undefined, subjects: ["tidy up"] },
+    ],
+  });
+  assert.match(prompt, /Wed, Jul 16/);
+  assert.match(prompt, /LPB-1:/);
+  assert.match(prompt, /- add login/);
+  assert.match(prompt, /- add token refresh/);
+  assert.match(prompt, /No ticket:/);
+  assert.match(prompt, /- tidy up/);
 });

@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.20.0] — 2026-07-16
+### Added
+- **Standup summary generator.** `Loopline: Generate Standup Summary` reads today's commits by you across all local branches, groups them by the ticket key already embedded in each commit message, and opens a draft in a scratch editor to copy. With AI enabled, each ticket's commits are rephrased into one short line grounded only in what actually happened; otherwise a plain bulleted list grouped by ticket is used. No new settings — reuses the existing AI enable/model/key configuration.
+
 ## [0.19.1] — 2026-07-16
 ### Fixed
 - **The sidebar's "Current" row didn't update on an external branch switch** (e.g. `git checkout` in the integrated terminal) — it only refreshed on editor/window-focus changes, neither of which fires when you never leave the VS Code window. It now also watches `.git/HEAD`, mirroring the status-bar indicator, which already had this.

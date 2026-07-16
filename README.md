@@ -46,6 +46,9 @@ feat: LPB-1234 some summary issue
 
 **One commit per MR.** Re-running the command on a branch that already has commits offers to squash them with your new work into a single commit and force-push with `--force-with-lease` (which fails safely if someone else pushed). You're always asked before history is rewritten; set `loopline.singleCommit` to `off` to keep every commit. It checks for an existing open MR first to avoid duplicates, and can pull the Jira ticket description into the MR body.
 
+**Standup summary**
+`Loopline: Generate Standup Summary` reads today's commits (by you, across all local branches), groups them by the ticket key already embedded in each commit message, and opens a draft standup update in a scratch editor for you to copy. With AI enabled it rephrases each ticket's commits into one short line; otherwise you get a plain bulleted list grouped by ticket — either way, it's grounded only in commits that actually happened.
+
 **Impact footer**
 Once you've created at least one branch, commit, or MR through Loopline, a row appears at the bottom of the sidebar: `12 branches · 8 commits · 5 MRs · ~3.5h saved`. It's hidden entirely until there's something to show. The time-saved figure is an estimate — `branches × loopline.impact.minutesPerBranch + commits × loopline.impact.minutesPerCommit + MRs × loopline.impact.minutesPerMr` (defaults: 15 / 5 / 10 minutes) — and the assumptions are always shown alongside it, in the tooltip and in the full breakdown you get by clicking the row (which also offers to reset the counters).
 
