@@ -16,7 +16,7 @@ import {
   buildJiraService,
   buildGitLabService,
   resolveGitLabProject,
-  buildAnthropicService,
+  buildAiService,
   tryTransitionTicket,
 } from "../util/workspace";
 import { withCancellableProgress, isCancelled } from "../util/progress";
@@ -369,7 +369,7 @@ async function confirmDiffMatchesTicket(
   ticketDescription: string,
   diff: string
 ): Promise<boolean> {
-  const anthropic = await buildAnthropicService(ctx);
+  const anthropic = await buildAiService(ctx);
   if (!anthropic) {
     return true;
   }
@@ -496,7 +496,7 @@ async function resolveMrDescription(
   ctx: vscode.ExtensionContext,
   input: DescriptionInput
 ): Promise<string | undefined> {
-  const anthropic = await buildAnthropicService(ctx);
+  const anthropic = await buildAiService(ctx);
   if (!anthropic) {
     return input.fallbackDescription;
   }

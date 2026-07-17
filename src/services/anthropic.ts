@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError } from "axios";
 import { OperationCancelled } from "../util/progress";
 import { createHttpClient, pickCode } from "../util/http-client";
 import { explainNetworkCode, HttpOptions } from "../util/http";
+import { AiService } from "./aiService";
 import {
   MrPromptInput,
   MR_SYSTEM_PROMPT,
@@ -33,7 +34,7 @@ export class AnthropicError extends Error {
   }
 }
 
-export class AnthropicService {
+export class AnthropicService implements AiService {
   private http: AxiosInstance;
 
   constructor(private opts: AnthropicOptions) {

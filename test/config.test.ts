@@ -19,6 +19,8 @@ import {
   setGitLabToken,
   getAnthropicKey,
   setAnthropicKey,
+  getOpenAiKey,
+  setOpenAiKey,
   findMissingConfig,
   ensureConfigured,
 } from "../src/util/config";
@@ -65,6 +67,7 @@ test("readConfig: every default when nothing is configured", () => {
     jiraTransitionOnMr: "",
     jiraTicketScope: "activeSprint",
     aiEnabled: false,
+    aiProvider: "anthropic",
     aiModel: "claude-sonnet-5",
     aiBaseUrl: "https://api.anthropic.com",
     aiMaxDiffBytes: 60000,
@@ -106,6 +109,7 @@ test("readConfig: every explicit override wins, with trimming/slash-stripping ap
     "jira.transitionOnMr": "  In Review  ",
     "jira.ticketScope": "allOpen",
     "ai.enabled": true,
+    "ai.provider": "openai",
     "ai.model": "  claude-opus  ",
     "ai.baseUrl": "  https://proxy.acme.com/ai//  ",
     "ai.maxDiffBytes": 12345,
@@ -146,6 +150,7 @@ test("readConfig: every explicit override wins, with trimming/slash-stripping ap
     jiraTransitionOnMr: "In Review",
     jiraTicketScope: "allOpen",
     aiEnabled: true,
+    aiProvider: "openai",
     aiModel: "claude-opus",
     aiBaseUrl: "https://proxy.acme.com/ai",
     aiMaxDiffBytes: 12345,
@@ -168,6 +173,22 @@ test("readConfig: every explicit override wins, with trimming/slash-stripping ap
     changelogEnabled: true,
     changelogCategoryMapping: { feature: "Added" },
   });
+});
+
+test("readConfig: provider=openai with no model/baseUrl set defaults to empty, not the Anthropic values", () => {
+  vscode.__setConfig("loopline", { "ai.provider": "openai" });
+  const cfg = readConfig();
+  assert.equal(cfg.aiProvider, "openai");
+  assert.equal(cfg.aiModel, "");
+  assert.equal(cfg.aiBaseUrl, "");
+});
+
+test("getOpenAiKey/setOpenAiKey: round-trips through secret storage, independent of the Anthropic key", async () => {
+  const ctx = createMockContext();
+  assert.equal(await getOpenAiKey(ctx), undefined);
+  await setOpenAiKey(ctx, "gateway-key");
+  assert.equal(await getOpenAiKey(ctx), "gateway-key");
+  assert.equal(await getAnthropicKey(ctx), undefined);
 });
 
 // ---- loadProjectConfig ----------------------------------------------------------

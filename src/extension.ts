@@ -18,6 +18,7 @@ import {
   setJiraToken,
   setGitLabToken,
   setAnthropicKey,
+  setOpenAiKey,
   validateConfig,
   readConfig,
   updateSetting,
@@ -168,6 +169,21 @@ export function activate(context: vscode.ExtensionContext) {
     if (key && key.trim()) {
       await setAnthropicKey(context, key.trim());
       vscode.window.showInformationMessage("Loopline: Anthropic API key saved. Enable AI in settings if needed.");
+    }
+  });
+
+  register("loopline.setOpenAiKey", async () => {
+    const key = await vscode.window.showInputBox({
+      title: "Loopline: Set AI (OpenAI Gateway) API Key",
+      prompt: "Paste the API key for your OpenAI-compatible AI gateway.",
+      password: true,
+      ignoreFocusOut: true,
+    });
+    if (key && key.trim()) {
+      await setOpenAiKey(context, key.trim());
+      vscode.window.showInformationMessage(
+        "Loopline: AI gateway API key saved. Set loopline.ai.provider to \"openai\" and enable AI in settings if needed."
+      );
     }
   });
 

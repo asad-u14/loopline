@@ -7,14 +7,18 @@ import {
   getGitLabToken,
   setGitLabToken,
   JiraType,
+  AiProvider,
   getAnthropicKey,
   setAnthropicKey,
+  getOpenAiKey,
+  setOpenAiKey,
   resetConfigWriteWarning,
   httpOptionsFromConfig,
 } from "../util/config";
 import { JiraService } from "../services/jira";
 import { GitLabService } from "../services/gitlab";
 import { AnthropicService } from "../services/anthropic";
+import { OpenAiGatewayService } from "../services/openaiGateway";
 
 /** Run an async check under a progress toast; return null on success, else the error message. */
 async function testConnection(title: string, fn: () => Promise<string>): Promise<string | null> {
@@ -201,7 +205,7 @@ export async function runSetupWizard(ctx: vscode.ExtensionContext): Promise<bool
   // Step 8 — optional AI MR descriptions.
   const aiPick = await vscode.window.showQuickPick(
     [
-      { label: "Enable AI MR descriptions", detail: "Sends your diff + ticket to Anthropic to draft MR bodies", value: "on" },
+      { label: "Enable AI MR descriptions", detail: "Sends your diff + ticket to an AI model to draft MR bodies", value: "on" },
       { label: "Not now", detail: "You can enable it later in settings", value: "off" },
     ],
     {
@@ -215,47 +219,39 @@ export async function runSetupWizard(ctx: vscode.ExtensionContext): Promise<bool
   }
   if (aiPick.value === "on") {
     await updateSetting("ai.enabled", true);
-    const existingKey = await getAnthropicKey(ctx);
-    const key = await vscode.window.showInputBox({
-      title: "Loopline Setup (8/8): Anthropic API key",
-      prompt: existingKey
-        ? "Anthropic API key (from console.anthropic.com) — leave blank to keep the existing one"
-        : "Anthropic API key (create at console.anthropic.com → API Keys)",
-      password: true,
-      ignoreFocusOut: true,
-    });
-    if (key === undefined) {
+
+    const providerPick = await vscode.window.showQuickPick(
+      [
+        { label: "Anthropic", detail: "Direct to api.anthropic.com (or a proxy in front of it)", value: "anthropic" as AiProvider },
+        { label: "OpenAI-compatible gateway", detail: "An internal gateway exposing the OpenAI chat completions API (e.g. in front of Bedrock)", value: "openai" as AiProvider },
+      ],
+      {
+        title: "Loopline Setup (8/8): AI provider",
+        placeHolder: `Currently: ${cfg.aiProvider === "openai" ? "OpenAI-compatible gateway" : "Anthropic"}`,
+        ignoreFocusOut: true,
+      }
+    );
+    if (providerPick === undefined) {
       return false;
     }
-    const keyToUse = key.trim() || existingKey || "";
-    const aiError = await testConnection("Verifying Anthropic API key…", () =>
-      new AnthropicService({
-        apiKey: keyToUse,
-        baseUrl: readConfig().aiBaseUrl,
-        model: readConfig().aiModel,
-        maxDiffBytes: readConfig().aiMaxDiffBytes,
-        http: httpOptionsFromConfig(),
-      })
-        .verify()
-        .then(() => "AI ready")
-    );
-    if (aiError) {
-      const choice = await vscode.window.showErrorMessage(
-        `Anthropic check failed: ${aiError}`,
-        "Re-enter key",
-        "Save anyway",
-        "Skip AI"
-      );
-      if (choice === "Re-enter key") {
+    await updateSetting("ai.provider", providerPick.value);
+
+    if (providerPick.value === "openai") {
+      const aborted = await setUpOpenAiGateway(ctx);
+      if (aborted === "restart") {
         return runSetupWizard(ctx);
       }
-      if (choice === "Skip AI") {
-        await updateSetting("ai.enabled", false);
+      if (aborted === "cancel") {
+        return false;
       }
-      // "Save anyway" falls through to store the key below.
-    }
-    if (key.trim()) {
-      await setAnthropicKey(ctx, key.trim());
+    } else {
+      const aborted = await setUpAnthropic(ctx);
+      if (aborted === "restart") {
+        return runSetupWizard(ctx);
+      }
+      if (aborted === "cancel") {
+        return false;
+      }
     }
   } else {
     await updateSetting("ai.enabled", false);
@@ -263,4 +259,131 @@ export async function runSetupWizard(ctx: vscode.ExtensionContext): Promise<bool
 
   vscode.window.showInformationMessage("Loopline is set up. You're ready to go 🎉");
   return true;
+}
+
+/** Outcome of an in-wizard sub-step: undefined means "continue", otherwise restart or bail out entirely. */
+type SubStepOutcome = "restart" | "cancel" | undefined;
+
+async function setUpAnthropic(ctx: vscode.ExtensionContext): Promise<SubStepOutcome> {
+  const existingKey = await getAnthropicKey(ctx);
+  const key = await vscode.window.showInputBox({
+    title: "Loopline Setup (8/8): Anthropic API key",
+    prompt: existingKey
+      ? "Anthropic API key (from console.anthropic.com) — leave blank to keep the existing one"
+      : "Anthropic API key (create at console.anthropic.com → API Keys)",
+    password: true,
+    ignoreFocusOut: true,
+  });
+  if (key === undefined) {
+    return "cancel";
+  }
+  const keyToUse = key.trim() || existingKey || "";
+  const aiError = await testConnection("Verifying Anthropic API key…", () =>
+    new AnthropicService({
+      apiKey: keyToUse,
+      baseUrl: readConfig().aiBaseUrl,
+      model: readConfig().aiModel,
+      maxDiffBytes: readConfig().aiMaxDiffBytes,
+      http: httpOptionsFromConfig(),
+    })
+      .verify()
+      .then(() => "AI ready")
+  );
+  if (aiError) {
+    const choice = await vscode.window.showErrorMessage(
+      `Anthropic check failed: ${aiError}`,
+      "Re-enter key",
+      "Save anyway",
+      "Skip AI"
+    );
+    if (choice === "Re-enter key") {
+      return "restart";
+    }
+    if (choice === "Skip AI") {
+      await updateSetting("ai.enabled", false);
+    }
+    // "Save anyway" falls through to store the key below.
+  }
+  if (key.trim()) {
+    await setAnthropicKey(ctx, key.trim());
+  }
+  return undefined;
+}
+
+async function setUpOpenAiGateway(ctx: vscode.ExtensionContext): Promise<SubStepOutcome> {
+  const cfg = readConfig();
+
+  const baseUrl = await vscode.window.showInputBox({
+    title: "Loopline Setup (8/8): AI gateway base URL",
+    prompt: "The OpenAI-compatible base URL for your gateway (e.g. https://api-eu1.aigateway.example.com/v1)",
+    value: cfg.aiBaseUrl,
+    ignoreFocusOut: true,
+  });
+  if (baseUrl === undefined) {
+    return "cancel";
+  }
+  if (!baseUrl.trim()) {
+    vscode.window.showErrorMessage("Loopline: a gateway base URL is required for the OpenAI-compatible provider.");
+    return "restart";
+  }
+  await updateSetting("ai.baseUrl", baseUrl.trim().replace(/\/+$/, ""));
+
+  const model = await vscode.window.showInputBox({
+    title: "Loopline Setup (8/8): AI gateway model id",
+    prompt: "The model id your gateway expects (e.g. bedrock-claude-sonnet-4-5)",
+    value: cfg.aiModel,
+    ignoreFocusOut: true,
+  });
+  if (model === undefined) {
+    return "cancel";
+  }
+  if (!model.trim()) {
+    vscode.window.showErrorMessage("Loopline: a model id is required for the OpenAI-compatible provider.");
+    return "restart";
+  }
+  await updateSetting("ai.model", model.trim());
+
+  const existingKey = await getOpenAiKey(ctx);
+  const key = await vscode.window.showInputBox({
+    title: "Loopline Setup (8/8): AI gateway API key",
+    prompt: existingKey
+      ? "AI gateway API key — leave blank to keep the existing one"
+      : "AI gateway API key",
+    password: true,
+    ignoreFocusOut: true,
+  });
+  if (key === undefined) {
+    return "cancel";
+  }
+  const keyToUse = key.trim() || existingKey || "";
+  const aiError = await testConnection("Verifying AI gateway API key…", () =>
+    new OpenAiGatewayService({
+      apiKey: keyToUse,
+      baseUrl: readConfig().aiBaseUrl,
+      model: readConfig().aiModel,
+      maxDiffBytes: readConfig().aiMaxDiffBytes,
+      http: httpOptionsFromConfig(),
+    })
+      .verify()
+      .then(() => "AI ready")
+  );
+  if (aiError) {
+    const choice = await vscode.window.showErrorMessage(
+      `AI gateway check failed: ${aiError}`,
+      "Re-enter details",
+      "Save anyway",
+      "Skip AI"
+    );
+    if (choice === "Re-enter details") {
+      return "restart";
+    }
+    if (choice === "Skip AI") {
+      await updateSetting("ai.enabled", false);
+    }
+    // "Save anyway" falls through to store the key below.
+  }
+  if (key.trim()) {
+    await setOpenAiKey(ctx, key.trim());
+  }
+  return undefined;
 }

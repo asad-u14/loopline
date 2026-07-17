@@ -7,6 +7,7 @@ import { ProjectConfig, PROJECT_CONFIG_FILENAME, filterProjectConfig } from "./p
 import { DEFAULT_CHANGELOG_CATEGORY_MAPPING } from "./changelog";
 
 export type JiraType = "cloud" | "server";
+export type AiProvider = "anthropic" | "openai";
 
 export interface LooplineConfig {
   jiraType: JiraType;
@@ -24,6 +25,7 @@ export interface LooplineConfig {
   jiraTransitionOnMr: string;
   jiraTicketScope: "activeSprint" | "allOpen";
   aiEnabled: boolean;
+  aiProvider: AiProvider;
   aiModel: string;
   aiBaseUrl: string;
   aiMaxDiffBytes: number;
@@ -50,9 +52,11 @@ export interface LooplineConfig {
 const SECRET_JIRA_TOKEN = "loopline.jira.token";
 const SECRET_GITLAB_TOKEN = "loopline.gitlab.token";
 const SECRET_ANTHROPIC_KEY = "loopline.anthropic.apiKey";
+const SECRET_OPENAI_KEY = "loopline.openai.apiKey";
 
 export function readConfig(): LooplineConfig {
   const c = vscode.workspace.getConfiguration("loopline");
+  const aiProvider = (c.get<string>("ai.provider") as AiProvider) || "anthropic";
   return {
     jiraType: (c.get<string>("jira.type") as JiraType) || "cloud",
     jiraBaseUrl: (c.get<string>("jira.baseUrl") || "").replace(/\/+$/, ""),
@@ -70,8 +74,11 @@ export function readConfig(): LooplineConfig {
     jiraTicketScope:
       (c.get<string>("jira.ticketScope") as "activeSprint" | "allOpen") || "activeSprint",
     aiEnabled: c.get<boolean>("ai.enabled") ?? false,
-    aiModel: (c.get<string>("ai.model") || "claude-sonnet-5").trim(),
-    aiBaseUrl: (c.get<string>("ai.baseUrl") || "https://api.anthropic.com").trim().replace(/\/+$/, ""),
+    aiProvider,
+    aiModel: (c.get<string>("ai.model") || (aiProvider === "openai" ? "" : "claude-sonnet-5")).trim(),
+    aiBaseUrl: (c.get<string>("ai.baseUrl") || (aiProvider === "openai" ? "" : "https://api.anthropic.com"))
+      .trim()
+      .replace(/\/+$/, ""),
     aiMaxDiffBytes: c.get<number>("ai.maxDiffBytes") ?? 60000,
     aiCheckDiffAgainstTicket: c.get<boolean>("ai.checkDiffAgainstTicket") ?? false,
     showTicketDetailsOnBranch: c.get<boolean>("showTicketDetailsOnBranch") ?? true,
@@ -314,6 +321,12 @@ export function getAnthropicKey(ctx: vscode.ExtensionContext): Thenable<string |
 }
 export function setAnthropicKey(ctx: vscode.ExtensionContext, key: string): Thenable<void> {
   return ctx.secrets.store(SECRET_ANTHROPIC_KEY, key);
+}
+export function getOpenAiKey(ctx: vscode.ExtensionContext): Thenable<string | undefined> {
+  return ctx.secrets.get(SECRET_OPENAI_KEY);
+}
+export function setOpenAiKey(ctx: vscode.ExtensionContext, key: string): Thenable<void> {
+  return ctx.secrets.store(SECRET_OPENAI_KEY, key);
 }
 
 export interface MissingItem {

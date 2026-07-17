@@ -5,11 +5,14 @@ import { GitService, findRepoRootForDir } from "../services/git";
 import { JiraService } from "../services/jira";
 import { GitLabService } from "../services/gitlab";
 import { AnthropicService } from "../services/anthropic";
+import { OpenAiGatewayService } from "../services/openaiGateway";
+import { AiService } from "../services/aiService";
 import {
   readConfig,
   getJiraToken,
   getGitLabToken,
   getAnthropicKey,
+  getOpenAiKey,
   httpOptionsFromConfig,
 } from "./config";
 import { withCancellableProgress, isCancelled } from "./progress";
@@ -231,13 +234,26 @@ export async function buildGitLabService(
   return new GitLabService(cfg.gitlabHost, token, undefined, httpOptionsFromConfig());
 }
 
-/** Returns an Anthropic service only when the AI feature is enabled AND a key exists. */
-export async function buildAnthropicService(
+/** Returns an AI service only when the AI feature is enabled AND a key exists for the configured provider. */
+export async function buildAiService(
   ctx: vscode.ExtensionContext
-): Promise<AnthropicService | undefined> {
+): Promise<AiService | undefined> {
   const cfg = readConfig();
   if (!cfg.aiEnabled) {
     return undefined;
+  }
+  if (cfg.aiProvider === "openai") {
+    const key = await getOpenAiKey(ctx);
+    if (!key) {
+      return undefined;
+    }
+    return new OpenAiGatewayService({
+      apiKey: key,
+      baseUrl: cfg.aiBaseUrl,
+      model: cfg.aiModel,
+      maxDiffBytes: cfg.aiMaxDiffBytes,
+      http: httpOptionsFromConfig(),
+    });
   }
   const key = await getAnthropicKey(ctx);
   if (!key) {

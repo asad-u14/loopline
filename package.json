@@ -78,6 +78,10 @@
         "title": "Loopline: Set AI (Anthropic) API Key"
       },
       {
+        "command": "loopline.setOpenAiKey",
+        "title": "Loopline: Set AI (OpenAI Gateway) API Key"
+      },
+      {
         "command": "loopline.ticketActions",
         "title": "Loopline: Ticket Actions"
       },
@@ -371,17 +375,30 @@
         "loopline.ai.enabled": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Opt in to AI-generated merge-request descriptions. When on, Loopline sends the branch **diff** and **ticket text** to the Anthropic API to draft the MR body, which you review and edit before it's posted. Requires an API key (`Loopline: Set AI (Anthropic) API Key`)."
+          "markdownDescription": "Opt in to AI-generated merge-request descriptions. When on, Loopline sends the branch **diff** and **ticket text** to the configured AI provider (`loopline.ai.provider`) to draft the MR body, which you review and edit before it's posted. Requires an API key (`Loopline: Set AI (Anthropic) API Key` or `Loopline: Set AI (OpenAI Gateway) API Key`)."
+        },
+        "loopline.ai.provider": {
+          "type": "string",
+          "enum": [
+            "anthropic",
+            "openai"
+          ],
+          "enumDescriptions": [
+            "Call the Anthropic Messages API directly (or a proxy in front of it)",
+            "Call an OpenAI-compatible chat completions endpoint, e.g. an internal AI gateway in front of Bedrock/Azure/etc."
+          ],
+          "default": "anthropic",
+          "markdownDescription": "Which AI backend to use for `loopline.ai.model` / `loopline.ai.baseUrl`."
         },
         "loopline.ai.model": {
           "type": "string",
           "default": "claude-sonnet-5",
-          "markdownDescription": "Anthropic model id used for AI features (e.g. `claude-sonnet-5`, `claude-haiku-4-5`)."
+          "markdownDescription": "Model id used for AI features. For the `anthropic` provider this is an Anthropic model id (e.g. `claude-sonnet-5`); for the `openai` provider it's whatever id your gateway expects (e.g. `bedrock-claude-sonnet-4-5`)."
         },
         "loopline.ai.baseUrl": {
           "type": "string",
           "default": "https://api.anthropic.com",
-          "markdownDescription": "Anthropic API base URL. Point this at your company gateway / proxy if source code can't go to the public API."
+          "markdownDescription": "AI API base URL. For the `anthropic` provider this defaults to the public Anthropic API; point it at your company proxy if source code can't go there directly. For the `openai` provider there is no default — set it to your gateway's base URL (e.g. `https://api-eu1.aigateway.example.com/v1`)."
         },
         "loopline.ai.maxDiffBytes": {
           "type": "number",
@@ -505,7 +522,9 @@
   "dependencies": {
     "axios": "^1.7.7",
     "https-proxy-agent": "^7.0.6",
-    "simple-git": "^3.27.0"
+    "openai": "^6.48.0",
+    "simple-git": "^3.27.0",
+    "undici": "^8.7.0"
   },
   "devDependencies": {
     "@types/node": "^18.19.0",

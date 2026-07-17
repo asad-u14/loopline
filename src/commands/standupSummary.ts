@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { GitService } from "../services/git";
-import { resolveRepoRoot, buildAnthropicService } from "../util/workspace";
+import { resolveRepoRoot, buildAiService } from "../util/workspace";
 import { withCancellableProgress, isCancelled } from "../util/progress";
 import { logError } from "../util/log";
 import { groupCommitsByTicket, formatStandupFallback, startOfDay } from "../util/standup";
@@ -43,7 +43,7 @@ export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promi
     day: "numeric",
   });
 
-  const anthropic = await buildAnthropicService(ctx);
+  const anthropic = await buildAiService(ctx);
   let markdown = formatStandupFallback(groups);
   let aiGenerated = false;
   if (anthropic) {

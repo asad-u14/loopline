@@ -6,6 +6,7 @@ import {
   getJiraToken,
   getGitLabToken,
   getAnthropicKey,
+  getOpenAiKey,
   httpOptionsFromConfig,
 } from "../util/config";
 import {
@@ -14,7 +15,7 @@ import {
   redactProxy,
   explainNetworkCode,
 } from "../util/http";
-import { buildJiraService, buildGitLabService, buildAnthropicService } from "../util/workspace";
+import { buildJiraService, buildGitLabService, buildAiService } from "../util/workspace";
 import { log, showLog } from "../util/log";
 import { pickCode } from "../util/http-client";
 import { AxiosError } from "axios";
@@ -70,12 +71,13 @@ export async function diagnoseConnectionCommand(ctx: vscode.ExtensionContext): P
   // --- per-service checks ---
   const jiraToken = await getJiraToken(ctx);
   const gitlabToken = await getGitLabToken(ctx);
-  const aiKey = await getAnthropicKey(ctx);
+  const aiLabel = cfg.aiProvider === "openai" ? "AI (OpenAI Gateway)" : "AI (Anthropic)";
+  const aiKey = cfg.aiProvider === "openai" ? await getOpenAiKey(ctx) : await getAnthropicKey(ctx);
 
   await checkTarget("Jira", cfg.jiraBaseUrl, !!jiraToken, http);
   await checkTarget("GitLab", cfg.gitlabHost, !!gitlabToken, http);
   if (cfg.aiEnabled) {
-    await checkTarget("Anthropic", cfg.aiBaseUrl, !!aiKey, http);
+    await checkTarget(aiLabel, cfg.aiBaseUrl, !!aiKey, http);
   }
 
   // --- live API calls ---
@@ -103,8 +105,8 @@ export async function diagnoseConnectionCommand(ctx: vscode.ExtensionContext): P
   });
 
   if (cfg.aiEnabled) {
-    await liveCheck("Anthropic", async () => {
-      const svc = await buildAnthropicService(ctx);
+    await liveCheck(aiLabel, async () => {
+      const svc = await buildAiService(ctx);
       if (!svc) {
         return "skipped (not configured)";
       }

@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as https from "https";
 import { HttpsProxyAgent } from "https-proxy-agent";
 import { AxiosRequestConfig } from "axios";
+import { Agent as UndiciAgent, ProxyAgent as UndiciProxyAgent, Dispatcher } from "undici";
 
 /**
  * Shared networking concerns for every outbound call (Jira / GitLab / Anthropic).
@@ -183,6 +184,46 @@ export function buildHttpConfig(
     config.httpsAgent = new https.Agent(agentOpts);
   }
   return { config, plan };
+}
+
+/**
+ * Same corporate-network handling as `buildHttpConfig`, but for `fetch`-based
+ * clients (e.g. the `openai` SDK) that take an undici `Dispatcher` rather than
+ * an axios agent. Returns `undefined` when nothing special is needed.
+ */
+export function buildFetchDispatcher(
+  baseUrl: string,
+  opts: HttpOptions,
+  env: ProxyEnv = process.env as ProxyEnv
+): { dispatcher: Dispatcher | undefined; plan: HttpPlan } {
+  const proxyUrl = resolveProxy(baseUrl, opts, env);
+  const { certs, problems } = loadCaCerts(opts.extraCaCerts, env);
+  const insecure = !!opts.allowInsecureTls;
+
+  const plan: HttpPlan = {
+    proxy: proxyUrl,
+    caCount: certs.length,
+    caProblems: problems,
+    insecure,
+  };
+
+  const tlsOpts: { ca?: Buffer[]; rejectUnauthorized?: boolean } = {};
+  if (certs.length) {
+    tlsOpts.ca = certs;
+  }
+  if (insecure) {
+    tlsOpts.rejectUnauthorized = false;
+  }
+
+  let dispatcher: Dispatcher | undefined;
+  if (proxyUrl) {
+    // requestTls carries the destination's TLS options through the CONNECT tunnel —
+    // the same corporate-CA-through-proxy setup buildHttpConfig() handles for axios.
+    dispatcher = new UndiciProxyAgent({ uri: proxyUrl, requestTls: tlsOpts });
+  } else if (certs.length || insecure) {
+    dispatcher = new UndiciAgent({ connect: tlsOpts });
+  }
+  return { dispatcher, plan };
 }
 
 /** Human summary of the plan, for the Output channel. */

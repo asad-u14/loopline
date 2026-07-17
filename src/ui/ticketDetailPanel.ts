@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { readConfig } from "../util/config";
-import { buildAnthropicService, currentRepoQuiet } from "../util/workspace";
+import { buildAiService, currentRepoQuiet } from "../util/workspace";
 import { withCancellableProgress, isCancelled } from "../util/progress";
 import { mdToHtml, escapeHtml } from "../util/markdown";
 import { topLevelEntries } from "../util/repo-layout";
@@ -67,7 +67,7 @@ async function generatePlan(ctx: vscode.ExtensionContext): Promise<void> {
   if (!current) {
     return;
   }
-  const anthropic = await buildAnthropicService(ctx);
+  const anthropic = await buildAiService(ctx);
   if (!anthropic) {
     panel?.webview.postMessage({
       type: "planError",

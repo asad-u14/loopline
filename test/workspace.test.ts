@@ -13,7 +13,7 @@ import {
   tryTransitionTicket,
   buildJiraService,
   buildGitLabService,
-  buildAnthropicService,
+  buildAiService,
   resolveGitLabProject,
 } from "../src/util/workspace";
 import { GitService } from "../src/services/git";
@@ -256,7 +256,7 @@ test("currentRepoQuiet: falls back to the first discovered repo when nothing is 
   assert.equal(root, fs.realpathSync(repo));
 });
 
-// ---- buildJiraService / buildGitLabService / buildAnthropicService ----------
+// ---- buildJiraService / buildGitLabService / buildAiService -----------------
 
 test("buildJiraService: no token -> undefined", async () => {
   vscode.__setConfig("loopline", { "jira.baseUrl": "https://acme.atlassian.net" });
@@ -291,25 +291,46 @@ test("buildGitLabService: token present -> a real service instance", async () =>
   assert.ok(svc);
 });
 
-test("buildAnthropicService: AI disabled -> undefined even with a key", async () => {
+test("buildAiService: AI disabled -> undefined even with a key", async () => {
   vscode.__setConfig("loopline", { "ai.enabled": false });
   const ctx = createMockContext();
   await ctx.secrets.store("loopline.anthropic.apiKey", "key");
-  const svc = await buildAnthropicService(ctx);
+  const svc = await buildAiService(ctx);
   assert.equal(svc, undefined);
 });
 
-test("buildAnthropicService: AI enabled but no key -> undefined", async () => {
+test("buildAiService: AI enabled but no key -> undefined", async () => {
   vscode.__setConfig("loopline", { "ai.enabled": true });
-  const svc = await buildAnthropicService(createMockContext());
+  const svc = await buildAiService(createMockContext());
   assert.equal(svc, undefined);
 });
 
-test("buildAnthropicService: AI enabled + key -> a real service instance", async () => {
+test("buildAiService: AI enabled + key -> a real Anthropic service instance (default provider)", async () => {
   vscode.__setConfig("loopline", { "ai.enabled": true });
   const ctx = createMockContext();
   await ctx.secrets.store("loopline.anthropic.apiKey", "key");
-  const svc = await buildAnthropicService(ctx);
+  const svc = await buildAiService(ctx);
+  assert.ok(svc);
+});
+
+test("buildAiService: provider=openai but no gateway key -> undefined, even with an Anthropic key present", async () => {
+  vscode.__setConfig("loopline", { "ai.enabled": true, "ai.provider": "openai" });
+  const ctx = createMockContext();
+  await ctx.secrets.store("loopline.anthropic.apiKey", "key");
+  const svc = await buildAiService(ctx);
+  assert.equal(svc, undefined);
+});
+
+test("buildAiService: provider=openai + gateway key -> a real OpenAI gateway service instance", async () => {
+  vscode.__setConfig("loopline", {
+    "ai.enabled": true,
+    "ai.provider": "openai",
+    "ai.baseUrl": "https://gateway.example.com/v1",
+    "ai.model": "bedrock-claude-sonnet-4-5",
+  });
+  const ctx = createMockContext();
+  await ctx.secrets.store("loopline.openai.apiKey", "key");
+  const svc = await buildAiService(ctx);
   assert.ok(svc);
 });
 
