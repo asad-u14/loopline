@@ -81,6 +81,30 @@ test("insertChangelogEntry: adds a new bullet to an existing subsection, after t
   );
 });
 
+test("insertChangelogEntry: with two existing subsections, a bullet lands at the end of the FIRST one, not the second", () => {
+  const content = [
+    "# Changelog",
+    "",
+    "## Unreleased",
+    "### Added",
+    "- **LPB-1** — First thing",
+    "### Fixed",
+    "- **LPB-3** — A fix",
+    "",
+    "## [0.21.1] — 2026-07-17",
+    "### Fixed",
+    "- Old fix",
+  ].join("\n");
+
+  const result = insertChangelogEntry(content, "Added", "- **LPB-2** — Second thing");
+  const lines = result.split("\n");
+
+  assert.deepEqual(
+    lines.slice(2, 7),
+    ["## Unreleased", "### Added", "- **LPB-1** — First thing", "- **LPB-2** — Second thing", "### Fixed"]
+  );
+});
+
 test("insertChangelogEntry: adds a new subsection under an existing Unreleased heading", () => {
   const content = ["# Changelog", "", "## Unreleased", "### Added", "- **LPB-1** — Add login", ""].join("\n");
 

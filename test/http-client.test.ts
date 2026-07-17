@@ -177,6 +177,20 @@ test("createHttpClient: an HTTP error with no matching network code omits the hi
   }
 });
 
+test("createHttpClient: a literal JSON null response body skips the body line (describeBody null branch)", async () => {
+  const server = await startMockServer([{ status: 400, body: "null" }]);
+  try {
+    const { channel } = withCapturedLog();
+    const client = createHttpClient({ label: "Null", baseUrl: server.url, timeoutMs: 5000, headers: {} });
+
+    await assert.rejects(() => client.get("/x"));
+
+    assert.ok(!channel.lines.some((l) => /response body:/.test(l)));
+  } finally {
+    await server.close();
+  }
+});
+
 // ---- network-level errors (no err.response) ------------------------------------
 
 test("createHttpClient: connection-refused logs the code and a hint, with no response section", async () => {

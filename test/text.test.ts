@@ -30,6 +30,18 @@ test("extractTicketKey: none present", () => {
   assert.equal(extractTicketKey("no ticket here"), undefined);
 });
 
+test("extractTicketKey: empty/falsy input returns undefined", () => {
+  assert.equal(extractTicketKey(""), undefined);
+});
+
+test("parseBranchName: empty/falsy input returns undefined", () => {
+  assert.equal(parseBranchName(""), undefined);
+});
+
+test("parseBranchName: a prefix with no ticket key in the rest returns undefined", () => {
+  assert.equal(parseBranchName("feature/just-a-slug-no-ticket"), undefined);
+});
+
 test("slugify: basic", () => {
   assert.equal(slugify("Some summary issue"), "some-summary-issue");
 });

@@ -48,3 +48,17 @@ test("mdToHtml: paragraphs separated by blank lines", () => {
   assert.match(html, /<p>para one<\/p>/);
   assert.match(html, /<p>para two<\/p>/);
 });
+
+test("mdToHtml: empty/falsy input returns an empty string", () => {
+  assert.equal(mdToHtml(""), "");
+});
+
+test("mdToHtml: blockquote", () => {
+  const html = mdToHtml("> a wise quote");
+  assert.match(html, /<blockquote>a wise quote<\/blockquote>/);
+});
+
+test("mdToHtml: consecutive non-blank lines are joined into one paragraph with <br>", () => {
+  const html = mdToHtml("line one\nline two continues");
+  assert.match(html, /<p>line one<br>line two continues<\/p>/);
+});

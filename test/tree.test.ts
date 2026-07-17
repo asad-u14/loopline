@@ -108,6 +108,7 @@ test("relativeTime: formats compact ages", () => {
   assert.equal(relativeTime(ago(3 * 3600 * 1000), now), "3h");
   assert.equal(relativeTime(ago(2 * 86400 * 1000), now), "2d");
   assert.equal(relativeTime(ago(21 * 86400 * 1000), now), "3w");
+  assert.equal(relativeTime(ago(400 * 86400 * 1000), now), "1y");
 });
 
 test("relativeTime: missing/invalid input returns undefined, not a guess", () => {

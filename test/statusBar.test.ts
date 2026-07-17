@@ -73,6 +73,31 @@ test("constructor: sets the item's command", () => {
   assert.equal(captured.command, "loopline.ticketActions");
 });
 
+test("constructor: a focused window-state change triggers a refresh, an unfocused one doesn't", async () => {
+  const ctx = createMockContext();
+  let capturedCb: ((s: { focused: boolean }) => void) | undefined;
+  (vscode.window as any).onDidChangeWindowState = (cb: any) => {
+    capturedCb = cb;
+    return { dispose() {} };
+  };
+
+  const bar = new TicketStatusBar(ctx);
+  let refreshCalls = 0;
+  const origRefresh = bar.refresh.bind(bar);
+  bar.refresh = async () => {
+    refreshCalls++;
+    return origRefresh();
+  };
+
+  capturedCb!({ focused: false });
+  await Promise.resolve();
+  assert.equal(refreshCalls, 0);
+
+  capturedCb!({ focused: true });
+  await Promise.resolve();
+  assert.equal(refreshCalls, 1);
+});
+
 test("refresh: no repo -> item hidden, state undefined", async () => {
   const ctx = createMockContext();
   const bar = new TicketStatusBar(ctx);
