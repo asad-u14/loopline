@@ -8,6 +8,9 @@ import {
 } from "../util/text";
 import { parseTicketCheckVerdict } from "../util/ai-prompt";
 import { recordCommitPushed, recordMrOpened } from "../util/impactStore";
+import { changelogCategoryForPrefix, buildChangelogLine, insertChangelogEntry } from "../util/changelog";
+import * as fs from "fs";
+import * as path from "path";
 import {
   resolveRepoRoot,
   buildJiraService,
@@ -329,6 +332,17 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
       vscode.env.openExternal(vscode.Uri.parse(mr.web_url));
     }
 
+    // Optional: auto-draft a CHANGELOG.md entry and push it onto the MR's branch.
+    if (cfg.changelogEnabled) {
+      await maybeUpdateChangelog(git, repoRoot, branch, {
+        ticketKey,
+        summary,
+        branchPrefix,
+        jiraBaseUrl: cfg.jiraBaseUrl,
+        categoryMapping: cfg.changelogCategoryMapping,
+      });
+    }
+
     // Optional: move the ticket to review (e.g. "In Review").
     if (cfg.jiraTransitionOnMr) {
       await tryTransitionTicket(ctx, ticketKey, cfg.jiraTransitionOnMr);
@@ -388,6 +402,50 @@ async function confirmDiffMatchesTicket(
 
 function mapCommitPrefix(mapping: Record<string, string>, branchPrefix: string): string {
   return mapping[branchPrefix] || branchPrefix;
+}
+
+interface ChangelogUpdateInput {
+  ticketKey: string;
+  summary: string;
+  branchPrefix: string;
+  jiraBaseUrl: string;
+  categoryMapping: Record<string, string>;
+}
+
+/**
+ * Auto-draft a CHANGELOG.md entry and push it onto the branch the MR was just
+ * opened from, so it actually lands on the MR rather than sitting as a local,
+ * uncommitted diff. Never creates CHANGELOG.md — only updates one that already
+ * exists. Failures here are logged and surfaced as a warning, never fatal: the
+ * MR itself is already created and shouldn't be reported as failed over this.
+ */
+async function maybeUpdateChangelog(
+  git: GitService,
+  repoRoot: string,
+  branch: string,
+  input: ChangelogUpdateInput
+): Promise<void> {
+  const filePath = path.join(repoRoot, "CHANGELOG.md");
+  if (!fs.existsSync(filePath)) {
+    log("changelog: no CHANGELOG.md at repo root — skipping");
+    return;
+  }
+  try {
+    const category = changelogCategoryForPrefix(input.branchPrefix, input.categoryMapping);
+    const line = buildChangelogLine(input.ticketKey, input.summary, input.jiraBaseUrl);
+    const current = fs.readFileSync(filePath, "utf8");
+    fs.writeFileSync(filePath, insertChangelogEntry(current, category, line), "utf8");
+
+    await git.stageFiles(["CHANGELOG.md"]);
+    await git.commit(`docs: changelog entry for ${input.ticketKey}`);
+    await git.pushSetUpstream(branch);
+    log(`changelog: added a ${category} entry for ${input.ticketKey} and pushed it`);
+  } catch (err) {
+    logError("changelog update failed", err);
+    vscode.window.showWarningMessage(
+      `Loopline: MR created, but the changelog entry failed (${(err as Error).message}).`
+    );
+  }
 }
 
 function buildMrDescription(

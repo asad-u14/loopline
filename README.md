@@ -52,6 +52,9 @@ A megaphone icon in the Tickets view title bar (next to the sprint filter toggle
 **Impact footer**
 Once you've created at least one branch, commit, or MR through Loopline, a row appears at the bottom of the sidebar: `12 branches · 8 commits · 5 MRs · ~3.5h saved`. It's hidden entirely until there's something to show. The time-saved figure is an estimate — `branches × loopline.impact.minutesPerBranch + commits × loopline.impact.minutesPerCommit + MRs × loopline.impact.minutesPerMr` (defaults: 15 / 5 / 10 minutes) — and the assumptions are always shown alongside it, in the tooltip and in the full breakdown you get by clicking the row (which also offers to reset the counters).
 
+**Auto-drafted changelog entries (opt-in)**
+When `loopline.changelog.enabled` is on and the project already has a `CHANGELOG.md`, creating an MR also drafts one bullet under a `## Unreleased` section (created if missing) — no AI involved, just the ticket key and the commit summary you already typed: `- **[LPB-1234](.../browse/LPB-1234)** — Fix login redirect`. Which subsection it lands in (`Added` / `Changed` / `Fixed`) comes from the branch prefix via `loopline.changelog.categoryMapping`. The entry is committed and pushed as a small follow-up commit on the same branch, so it actually lands on the MR instead of sitting as a local uncommitted diff. Never creates a CHANGELOG.md that doesn't already exist.
+
 **Status-bar ticket indicator**
 When you're on a branch that follows the convention, the status bar shows the ticket (e.g. `$(git-branch) LPB-1234`). Click it for quick actions: **Open Jira ticket**, **Open merge request** (finds the open MR for the current branch), **Copy ticket key**, or jump straight into create-branch / commit-push. It updates automatically when you switch branches — including from the terminal.
 
@@ -160,6 +163,8 @@ All under `loopline.*` in Settings (or `settings.json`):
 | `loopline.http.proxy` | Proxy for Jira/GitLab/AI requests (Node ignores the OS proxy); overrides `HTTPS_PROXY` |
 | `loopline.http.extraCaCerts` | Paths to extra CA certificates (Node ignores the Windows cert store) |
 | `loopline.http.allowInsecureTls` | ⚠️ Disable TLS verification — insecure, last resort only |
+| `loopline.changelog.enabled` | Auto-draft a CHANGELOG.md entry per MR (off by default); only acts if CHANGELOG.md already exists |
+| `loopline.changelog.categoryMapping` | Branch prefix → CHANGELOG.md subsection (default: `bugfix`/`hotfix` → `Fixed`, `feature` → `Added`, `chore` → `Changed`) |
 
 Example custom mappings and transitions:
 

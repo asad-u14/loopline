@@ -19,6 +19,8 @@ export interface ProjectConfig {
   singleCommit?: "squash" | "off";
   branchNameTemplate?: string;
   commitMessageTemplate?: string;
+  changelogEnabled?: boolean;
+  changelogCategoryMapping?: Record<string, string>;
 }
 
 /** Every key a `.loopline.json` may set — used both to validate and to scaffold one. */
@@ -34,6 +36,8 @@ export const PROJECT_CONFIG_KEYS: (keyof ProjectConfig)[] = [
   "singleCommit",
   "branchNameTemplate",
   "commitMessageTemplate",
+  "changelogEnabled",
+  "changelogCategoryMapping",
 ];
 
 /**
@@ -80,6 +84,12 @@ export function filterProjectConfig(raw: unknown): ProjectConfig {
   }
   if (typeof r.commitMessageTemplate === "string") {
     out.commitMessageTemplate = r.commitMessageTemplate;
+  }
+  if (typeof r.changelogEnabled === "boolean") {
+    out.changelogEnabled = r.changelogEnabled;
+  }
+  if (isStringRecord(r.changelogCategoryMapping)) {
+    out.changelogCategoryMapping = r.changelogCategoryMapping;
   }
   return out;
 }

@@ -43,6 +43,8 @@ export async function createProjectConfigCommand(ctx: vscode.ExtensionContext): 
     singleCommit: cfg.singleCommit,
     branchNameTemplate: cfg.branchNameTemplate,
     commitMessageTemplate: cfg.commitMessageTemplate,
+    changelogEnabled: cfg.changelogEnabled,
+    changelogCategoryMapping: cfg.changelogCategoryMapping,
   };
 
   try {

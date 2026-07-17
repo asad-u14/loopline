@@ -15,8 +15,15 @@ test("filterProjectConfig: passes through every recognized, correctly-typed key"
     singleCommit: "off",
     branchNameTemplate: "{ticket}_{slug}",
     commitMessageTemplate: "[{ticket}] {summary}",
+    changelogEnabled: true,
+    changelogCategoryMapping: { bugfix: "Fixed" },
   };
   assert.deepEqual(filterProjectConfig(raw), raw);
+});
+
+test("filterProjectConfig: rejects a non-boolean changelogEnabled and non-string-map categoryMapping", () => {
+  const raw = { changelogEnabled: "yes", changelogCategoryMapping: { bugfix: 5 } };
+  assert.deepEqual(filterProjectConfig(raw), {});
 });
 
 test("filterProjectConfig: drops unrecognized keys silently", () => {

@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.21.1",
+  "version": "0.22.0",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -307,6 +307,21 @@
           "type": "string",
           "default": "{prefix}: {ticket} {summary}",
           "markdownDescription": "Template for generated commit messages. Tokens: `{prefix}`, `{ticket}`, `{summary}`. Defaults to Loopline's original shape (`feat: LPB-1234 some summary`)."
+        },
+        "loopline.changelog.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Opt in to auto-drafting a CHANGELOG.md entry when an MR is created — one bullet under a `## Unreleased` section (created if missing), using the ticket key and your commit summary. Only acts if the project already has a CHANGELOG.md; never creates one. The entry is committed and pushed to the same branch as a small follow-up commit, so it lands on the MR you just opened."
+        },
+        "loopline.changelog.categoryMapping": {
+          "type": "object",
+          "default": {
+            "bugfix": "Fixed",
+            "hotfix": "Fixed",
+            "feature": "Added",
+            "chore": "Changed"
+          },
+          "markdownDescription": "Maps a **branch prefix** to the CHANGELOG.md subsection (`### Added` / `### Changed` / `### Fixed`, matching Keep a Changelog style) its entry is filed under. Unmapped prefixes default to `Changed`."
         },
         "loopline.confirmBranchName": {
           "type": "boolean",

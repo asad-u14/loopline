@@ -4,6 +4,7 @@ import * as path from "path";
 import { logError } from "./log";
 import { DEFAULT_BRANCH_TEMPLATE, DEFAULT_COMMIT_TEMPLATE } from "./text";
 import { ProjectConfig, PROJECT_CONFIG_FILENAME, filterProjectConfig } from "./projectConfig";
+import { DEFAULT_CHANGELOG_CATEGORY_MAPPING } from "./changelog";
 
 export type JiraType = "cloud" | "server";
 
@@ -42,6 +43,8 @@ export interface LooplineConfig {
   httpAllowInsecureTls: boolean;
   branchNameTemplate: string;
   commitMessageTemplate: string;
+  changelogEnabled: boolean;
+  changelogCategoryMapping: Record<string, string>;
 }
 
 const SECRET_JIRA_TOKEN = "loopline.jira.token";
@@ -88,6 +91,9 @@ export function readConfig(): LooplineConfig {
     httpAllowInsecureTls: c.get<boolean>("http.allowInsecureTls") ?? false,
     branchNameTemplate: c.get<string>("branchNameTemplate") || DEFAULT_BRANCH_TEMPLATE,
     commitMessageTemplate: c.get<string>("commitMessageTemplate") || DEFAULT_COMMIT_TEMPLATE,
+    changelogEnabled: c.get<boolean>("changelog.enabled") ?? false,
+    changelogCategoryMapping:
+      c.get<Record<string, string>>("changelog.categoryMapping") || DEFAULT_CHANGELOG_CATEGORY_MAPPING,
   };
 }
 
@@ -175,6 +181,12 @@ export function readConfigForRepo(repoRoot: string | undefined): LooplineConfig 
   }
   if (project.commitMessageTemplate !== undefined && !isExplicitlySet(c, "commitMessageTemplate")) {
     merged.commitMessageTemplate = project.commitMessageTemplate;
+  }
+  if (project.changelogEnabled !== undefined && !isExplicitlySet(c, "changelog.enabled")) {
+    merged.changelogEnabled = project.changelogEnabled;
+  }
+  if (project.changelogCategoryMapping && !isExplicitlySet(c, "changelog.categoryMapping")) {
+    merged.changelogCategoryMapping = project.changelogCategoryMapping;
   }
   return merged;
 }

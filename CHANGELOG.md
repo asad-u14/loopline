@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.22.0] — 2026-07-17
+### Added
+- **Auto-drafted changelog entries (opt-in).** With `loopline.changelog.enabled` on, creating an MR also drafts a bullet under a `## Unreleased` section in the project's `CHANGELOG.md` (created if missing) — no AI, just the ticket key and the commit summary you already typed. Which subsection it lands in (`Added`/`Changed`/`Fixed`) comes from the branch prefix via `loopline.changelog.categoryMapping`. The entry is committed and pushed as a follow-up commit on the same branch, so it lands on the MR rather than sitting as a local uncommitted diff. Never creates a CHANGELOG.md that doesn't already exist, and never touches the file when disabled (the default). Both settings are also recognized in `.loopline.json` for team-wide sharing.
+
 ## [0.21.1] — 2026-07-17
 ### Development (no user-facing change)
 - **Unlocked unit testing of the Jira, GitLab, and Anthropic service classes.** They were previously impossible to test at all — importing them transitively pulled in `vscode`, which has no runtime module outside the real extension host. Added a minimal test-only `vscode` stub (`test/support/`) and a local-HTTP-mock-server helper (matching the existing live-network test pattern, no new dependency), then added real coverage for request shapes and every mapped error status (401/403/404/429, Jira's Cloud-vs-Server hints, GitLab's `/user` → `/version` 403 fallback, the Sprint-unsupported retry). Also added `src/util/repo-layout.ts` coverage, the one remaining gap among vscode-free modules. 231 tests, up from 183.
