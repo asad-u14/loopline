@@ -47,13 +47,8 @@ export class GitService {
 
   /** True when HEAD is detached (no branch checked out). */
   async isDetachedHead(): Promise<boolean> {
-    try {
-      // `git symbolic-ref -q HEAD` exits non-zero on a detached HEAD.
-      await this.git.raw(["symbolic-ref", "-q", "HEAD"]);
-      return false;
-    } catch {
-      return true;
-    }
+    const status = await this.git.status();
+    return status.detached;
   }
 
   /** True if a remote with this name exists (default: origin). */
@@ -240,11 +235,10 @@ export class GitService {
   /** Fetch a branch (or everything) from a remote. */
   async fetch(remote = "origin", branch?: string): Promise<void> {
     try {
-      if (branch) {
-        await this.git.fetch(remote, branch);
-      } else {
-        await this.git.fetch(remote);
-      }
+      // simple-git's typed fetch(remote) — with no branch arg — silently
+      // resolves instead of rejecting when the remote doesn't exist; raw()
+      // propagates the failure correctly in every case.
+      await this.git.raw(branch ? ["fetch", remote, branch] : ["fetch", remote]);
     } catch (err) {
       throw new GitError(`Fetch from ${remote} failed: ${(err as Error).message}`);
     }
