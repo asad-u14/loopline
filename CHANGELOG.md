@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.21.1] — 2026-07-17
+### Development (no user-facing change)
+- **Unlocked unit testing of the Jira, GitLab, and Anthropic service classes.** They were previously impossible to test at all — importing them transitively pulled in `vscode`, which has no runtime module outside the real extension host. Added a minimal test-only `vscode` stub (`test/support/`) and a local-HTTP-mock-server helper (matching the existing live-network test pattern, no new dependency), then added real coverage for request shapes and every mapped error status (401/403/404/429, Jira's Cloud-vs-Server hints, GitLab's `/user` → `/version` 403 fallback, the Sprint-unsupported retry). Also added `src/util/repo-layout.ts` coverage, the one remaining gap among vscode-free modules. 231 tests, up from 183.
+
 ## [0.21.0] — 2026-07-16
 ### Added
 - **Branch/commit name templates.** `loopline.branchNameTemplate` and `loopline.commitMessageTemplate` let a team reshape the generated names (tokens: `{prefix}`, `{ticket}`, `{slug}` / `{summary}`) instead of being locked into Loopline's original `prefix/ticket-slug` and `prefix: ticket summary` shapes. Defaults reproduce today's exact format byte-for-byte, so nothing changes unless a template is explicitly edited.

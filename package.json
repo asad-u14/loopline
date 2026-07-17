@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -482,7 +482,7 @@
     "bundle": "node esbuild.js",
     "check-types": "tsc --noEmit -p ./",
     "compile-tests": "tsc -p ./tsconfig.test.json",
-    "test": "npm run compile-tests && node --test \"out-test/**/*.test.js\"",
+    "test": "npm run compile-tests && node --require ./test/support/register-vscode-stub.js --test \"out-test/**/*.test.js\"",
     "pretest": "npm run check-types",
     "watch": "node esbuild.js --watch",
     "package": "npm run check-types && npm run bundle -- --production && vsce package"
