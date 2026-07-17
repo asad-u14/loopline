@@ -65,6 +65,18 @@ export function createHttpClient(opts: ClientOptions): AxiosInstance {
       if (hint) {
         log(`${opts.label}   hint: ${hint}`);
       }
+      if (err.response) {
+        const server = err.response.headers?.["server"] ?? err.response.headers?.["Server"];
+        const via = err.response.headers?.["via"];
+        const contentType = err.response.headers?.["content-type"];
+        log(
+          `${opts.label}   response headers: server=${server ?? "(none)"} via=${via ?? "(none)"} content-type=${contentType ?? "(none)"}`
+        );
+        const bodySnippet = describeBody(err.response.data);
+        if (bodySnippet) {
+          log(`${opts.label}   response body: ${bodySnippet}`);
+        }
+      }
       return Promise.reject(err);
     }
   );
@@ -105,6 +117,28 @@ export function pickCode(err: AxiosError): string | undefined {
     return cause;
   }
   return direct ?? cause;
+}
+
+/** Render a response body as a short, log-safe snippet (JSON stays JSON; anything else is truncated text). */
+function describeBody(data: unknown): string | undefined {
+  if (data === undefined || data === null) {
+    return undefined;
+  }
+  let text: string;
+  if (typeof data === "string") {
+    text = data;
+  } else {
+    try {
+      text = JSON.stringify(data);
+    } catch {
+      return undefined;
+    }
+  }
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  return trimmed.length > 300 ? `${trimmed.slice(0, 300)}…` : trimmed;
 }
 
 function joinUrl(base: string | undefined, url: string | undefined): string {
