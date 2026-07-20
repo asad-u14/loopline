@@ -237,26 +237,39 @@
   .risk-icon.serious { background: var(--serious); }
   .risk-row p { margin: 0; font-size: 14px; }
 
-  /* ---------- Architecture stack ---------- */
-  .arch-stack { display: flex; flex-direction: column; gap: 4px; }
-  .arch-layer {
-    background: var(--card); border: 1px solid var(--border);
-    border-left: 4px solid var(--series-1); border-radius: 12px;
-    padding: 14px 20px;
+  /* ---------- Architecture diagram ---------- */
+  .arch-diagram { max-width: 900px; margin: 0 auto; }
+  .arch-diagram .diagram-frame {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 10px;
   }
-  .arch-layer-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-  .arch-layer-head .name { font-weight: 700; font-size: 14.5px; color: var(--text-primary); }
-  .arch-layer-head .desc { font-size: 12.5px; color: var(--text-muted); }
-  .arch-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .arch-chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 999px; padding: 5px 12px; font-size: 12.5px;
-    color: var(--text-secondary); font-weight: 500;
+  .arch-diagram .node text.title { font-size: 12.5px; font-weight: 700; fill: var(--text-primary); font-family: var(--font); }
+  .arch-diagram .node text.subtitle { font-size: 10px; fill: var(--text-muted); font-family: var(--font); }
+  .arch-diagram .badge-text { font-size: 9px; font-weight: 800; fill: #ffffff; font-family: var(--font); }
+  .arch-diagram .node rect.box { filter: url(#archSoftShadow); }
+  .arch-diagram .hub rect.box {
+    fill: url(#archHubGradient); stroke: var(--series-1);
+    animation: archHubGlow 3.2s ease-in-out infinite;
   }
-  .arch-chip .dot { width: 7px; height: 7px; margin-right: 0; }
-  .arch-arrow { text-align: center; color: var(--text-muted); font-size: 15px; line-height: 1; margin: -1px 0; }
-  .arch-external .arch-chip { background: var(--surface-1); }
+  .arch-diagram .hub text.title, .arch-diagram .hub text.subtitle { fill: #ffffff; }
+  .arch-diagram .hub text.subtitle { fill: rgba(255,255,255,0.88); }
+  .arch-diagram .hub .badge { fill: rgba(255,255,255,0.24); }
+  @keyframes archHubGlow {
+    0%, 100% { filter: url(#archSoftShadow) drop-shadow(0 0 0 rgba(42,120,214,0)); }
+    50%      { filter: url(#archSoftShadow) drop-shadow(0 0 7px rgba(42,120,214,0.55)); }
+  }
+  .arch-diagram .edge { fill: none; stroke-width: 1.6; }
+  .arch-diagram .edge.flow { stroke-dasharray: 5 5; animation: archFlow 1s linear infinite; }
+  @keyframes archFlow { to { stroke-dashoffset: -20; } }
+  .arch-diagram .edge-label { font-size: 9.5px; fill: var(--text-secondary); font-family: var(--font); font-weight: 700; }
+  .arch-diagram .edge-label-bg { fill: var(--surface-1); }
+  .arch-diagram .zone { fill: none; stroke-dasharray: 4 4; }
+  .arch-diagram .zone-label { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; font-family: var(--font); }
+  .arch-diagram .opt-tag rect { fill: var(--series-5); }
+  .arch-diagram .opt-tag text { fill: #fff; font-size: 8px; font-weight: 800; letter-spacing: .03em; font-family: var(--font); }
+  .arch-diagram .legend-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--text-secondary); }
+  .arch-diagram .legend-item { display: flex; align-items: center; gap: 6px; }
+  .arch-diagram .legend-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+  .arch-diagram .legend-dot.dashed { background: none; border: 1.4px dashed var(--series-5); }
 
   /* ---------- Ask list ---------- */
   .ask-list { display: flex; flex-direction: column; gap: 14px; }
@@ -395,59 +408,126 @@
     <div class="slide-body">
       <div class="eyebrow">4 · What's built — architecture</div>
       <h2>How the pieces fit together</h2>
-      <p style="font-size:14.5px; max-width:960px; margin-bottom:20px;">Everything runs locally, inside VS Code — there is no separate server. A click in the sidebar or command palette triggers one command; the command orchestrates whichever integrations it needs, then reflects the result straight back into the sidebar, status bar, or a themed panel.</p>
-      <div class="arch-stack">
-        <div class="arch-layer" style="border-left-color:var(--series-1)">
-          <div class="arch-layer-head"><span class="name">Editor surface</span><span class="desc">where you interact</span></div>
-          <div class="arch-chips">
-            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Sidebar ticket tree</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Status bar indicator</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>SCM view buttons</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Command palette</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Themed webview panels</span>
-          </div>
+      <p style="font-size:14px; max-width:900px; margin-bottom:16px;">Loopline is a hub: the editor and your config feed it on the left, it orchestrates locally, then reaches out to exactly the external system each action needs on the right. The dashed zone marks the boundary that matters most — everything inside it never leaves your machine.</p>
+      <div class="arch-diagram">
+        <div class="diagram-frame">
+          <svg viewBox="0 0 880 380" width="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="archHubGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#2a78d6"/>
+                <stop offset="100%" stop-color="#1baf7a"/>
+              </linearGradient>
+              <filter id="archSoftShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#0b0b0b" flood-opacity="0.12"/>
+              </filter>
+              <marker id="archArrowBlue" markerWidth="7" markerHeight="7" refX="5.5" refY="3.2" orient="auto">
+                <path d="M0,0 L6,3.2 L0,6.4 Z" fill="#2a78d6"/>
+              </marker>
+              <marker id="archArrowGreen" markerWidth="7" markerHeight="7" refX="5.5" refY="3.2" orient="auto">
+                <path d="M0,0 L6,3.2 L0,6.4 Z" fill="#008300"/>
+              </marker>
+              <marker id="archArrowAqua" markerWidth="7" markerHeight="7" refX="5.5" refY="3.2" orient="auto">
+                <path d="M0,0 L6,3.2 L0,6.4 Z" fill="#1baf7a"/>
+              </marker>
+              <marker id="archArrowViolet" markerWidth="7" markerHeight="7" refX="5.5" refY="3.2" orient="auto">
+                <path d="M0,0 L6,3.2 L0,6.4 Z" fill="#4a3aa7"/>
+              </marker>
+            </defs>
+
+            <!-- zones -->
+            <rect class="zone" x="20" y="20" width="540" height="338" rx="16" stroke="#2a78d6" opacity="0.45"/>
+            <text class="zone-label" x="34" y="38" fill="#2a78d6">Runs entirely on your machine</text>
+            <rect class="zone" x="600" y="20" width="260" height="338" rx="16" stroke="#eb6834" opacity="0.5"/>
+            <text class="zone-label" x="614" y="38" fill="#eb6834">External services</text>
+
+            <!-- edges -->
+            <path class="edge flow" d="M260,96 C300,96 300,169 340,169" stroke="#2a78d6" marker-end="url(#archArrowBlue)"/>
+            <path class="edge flow" d="M260,196 L340,196" stroke="#2a78d6" marker-end="url(#archArrowBlue)"/>
+            <path class="edge flow" d="M260,296 C300,296 300,224 340,224" stroke="#4a3aa7" marker-end="url(#archArrowViolet)"/>
+            <path class="edge flow" d="M540,169 C580,169 580,96 620,96" stroke="#008300" marker-end="url(#archArrowGreen)"/>
+            <path class="edge flow" d="M540,196 L620,196" stroke="#008300" marker-end="url(#archArrowGreen)"/>
+            <path class="edge flow" d="M540,224 C580,224 580,296 620,296" stroke="#1baf7a" marker-end="url(#archArrowAqua)"/>
+
+            <!-- edge labels -->
+            <g><rect class="edge-label-bg" x="264" y="125" width="72" height="14" rx="3"/><text class="edge-label" x="268" y="135">pick ticket</text></g>
+            <g><rect class="edge-label-bg" x="264" y="189" width="72" height="14" rx="3"/><text class="edge-label" x="268" y="199">branch state</text></g>
+            <g><rect class="edge-label-bg" x="264" y="253" width="72" height="14" rx="3"/><text class="edge-label" x="268" y="263">tokens</text></g>
+            <g><rect class="edge-label-bg" x="544" y="125" width="72" height="14" rx="3"/><text class="edge-label" x="548" y="135">read/update</text></g>
+            <g><rect class="edge-label-bg" x="544" y="189" width="72" height="14" rx="3"/><text class="edge-label" x="548" y="199">open MR</text></g>
+            <g><rect class="edge-label-bg" x="544" y="253" width="72" height="14" rx="3"/><text class="edge-label" x="548" y="263">opt-in draft</text></g>
+
+            <!-- nodes -->
+            <g class="node">
+              <rect class="box" x="40" y="54" width="220" height="84" rx="10" fill="var(--card)" stroke="#2a78d6" stroke-width="1.4"/>
+              <rect class="badge" x="52" y="66" width="22" height="22" rx="6" fill="#2a78d6"/>
+              <text class="badge-text" x="63" y="80" text-anchor="middle">VS</text>
+              <text class="title" x="82" y="80">VS Code editor</text>
+              <text class="subtitle" x="52" y="102">Sidebar, status bar, commands</text>
+              <text class="subtitle" x="52" y="118" font-style="italic">— where you click —</text>
+            </g>
+
+            <g class="node">
+              <rect class="box" x="40" y="154" width="220" height="84" rx="10" fill="var(--card)" stroke="#2a78d6" stroke-width="1.4"/>
+              <rect class="badge" x="52" y="166" width="22" height="22" rx="6" fill="#2a78d6"/>
+              <text class="badge-text" x="63" y="180" text-anchor="middle">GIT</text>
+              <text class="title" x="82" y="180">Local Git repo</text>
+              <text class="subtitle" x="52" y="202">Branches, commits, push</text>
+              <text class="subtitle" x="52" y="218" font-style="italic">— already on this machine —</text>
+            </g>
+
+            <g class="node">
+              <rect class="box" x="40" y="254" width="220" height="84" rx="10" fill="var(--card)" stroke="#4a3aa7" stroke-width="1.4"/>
+              <rect class="badge" x="52" y="266" width="22" height="22" rx="6" fill="#4a3aa7"/>
+              <text class="badge-text" x="63" y="280" text-anchor="middle">CFG</text>
+              <text class="title" x="82" y="280">Config &amp; secrets</text>
+              <text class="subtitle" x="52" y="302">Settings + .loopline.json</text>
+              <text class="subtitle" x="52" y="318" font-style="italic">— Secret Storage, never files —</text>
+            </g>
+
+            <g class="node hub">
+              <rect class="box" x="340" y="141" width="200" height="110" rx="12"/>
+              <circle class="badge" cx="365" cy="166" r="13"/>
+              <text class="badge-text" x="365" y="170" text-anchor="middle" font-size="11">L</text>
+              <text class="title" x="386" y="170" font-size="13">Loopline core</text>
+              <text class="subtitle" x="356" y="196">Orchestrates every command</text>
+              <text class="subtitle" x="356" y="213">Runs locally — no server</text>
+            </g>
+
+            <g class="node">
+              <rect class="box" x="620" y="54" width="220" height="84" rx="10" fill="var(--card)" stroke="#008300" stroke-width="1.4"/>
+              <rect class="badge" x="632" y="66" width="22" height="22" rx="6" fill="#008300"/>
+              <text class="badge-text" x="643" y="80" text-anchor="middle">JRA</text>
+              <text class="title" x="662" y="80">Jira Cloud / Server</text>
+              <text class="subtitle" x="632" y="102">Tickets &amp; sprints</text>
+              <text class="subtitle" x="632" y="118" font-style="italic">— status transitions —</text>
+            </g>
+
+            <g class="node">
+              <rect class="box" x="620" y="154" width="220" height="84" rx="10" fill="var(--card)" stroke="#008300" stroke-width="1.4"/>
+              <rect class="badge" x="632" y="166" width="22" height="22" rx="6" fill="#008300"/>
+              <text class="badge-text" x="643" y="180" text-anchor="middle">GL</text>
+              <text class="title" x="662" y="180">GitLab</text>
+              <text class="subtitle" x="632" y="202">Merge requests</text>
+              <text class="subtitle" x="632" y="218" font-style="italic">— project auto-detected —</text>
+            </g>
+
+            <g class="node">
+              <rect class="box" x="620" y="254" width="220" height="84" rx="10" fill="var(--card)" stroke="#1baf7a" stroke-width="1.4" stroke-dasharray="5 3.5"/>
+              <g class="opt-tag"><rect x="794" y="264" width="34" height="13" rx="6.5"/><text x="811" y="273" text-anchor="middle">OPT-IN</text></g>
+              <rect class="badge" x="632" y="266" width="22" height="22" rx="6" fill="#1baf7a"/>
+              <text class="badge-text" x="643" y="280" text-anchor="middle">AI</text>
+              <text class="title" x="662" y="280">AI provider</text>
+              <text class="subtitle" x="632" y="302">Anthropic / OpenAI gateway</text>
+              <text class="subtitle" x="632" y="318" font-style="italic">— off by default —</text>
+            </g>
+          </svg>
         </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer" style="border-left-color:var(--series-2)">
-          <div class="arch-layer-head"><span class="name">Commands</span><span class="desc">one click, one job each</span></div>
-          <div class="arch-chips">
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Create Branch</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Commit, Push &amp; Create MR</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Ticket Actions</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Standup Summary</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Diagnose Connection</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Setup Wizard</span>
-          </div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer" style="border-left-color:var(--series-5)">
-          <div class="arch-layer-head"><span class="name">Integrations</span><span class="desc">talk to your existing tools</span></div>
-          <div class="arch-chips">
-            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Git (local repo)</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Jira Cloud / Server</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>GitLab</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-5)"></span>AI — Anthropic or OpenAI-compatible gateway</span>
-          </div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer" style="border-left-color:var(--series-7)">
-          <div class="arch-layer-head"><span class="name">Foundations</span><span class="desc">shared, cross-cutting plumbing</span></div>
-          <div class="arch-chips">
-            <span class="arch-chip"><span class="dot" style="background:var(--series-7)"></span>Config + VS Code Secret Storage</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-6)"></span>Proxy / corporate-CA-aware HTTP client</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--series-4)"></span>Local impact tracking</span>
-            <span class="arch-chip"><span class="dot" style="background:var(--text-muted)"></span>Logging &amp; diagnostics</span>
-          </div>
-        </div>
-        <div class="arch-arrow">↓</div>
-        <div class="arch-layer arch-external" style="border-left-color:var(--text-muted)">
-          <div class="arch-layer-head"><span class="name">External systems</span><span class="desc">only reached when a command needs them</span></div>
-          <div class="arch-chips">
-            <span class="arch-chip">Your local Git repo</span>
-            <span class="arch-chip">Jira</span>
-            <span class="arch-chip">GitLab</span>
-            <span class="arch-chip">Anthropic API / internal AI gateway <i style="font-style:normal;color:var(--text-muted);">(opt-in only)</i></span>
-          </div>
+        <div class="legend-row">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--series-1)"></span>Local / identity</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--series-2)"></span>Core workflow integration</div>
+          <div class="legend-item"><span class="legend-dot dashed"></span>Optional (dashed border = opt-in)</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--series-7)"></span>Config &amp; secrets</div>
+          <div class="legend-item">┄ Animated dashed line = live data flow</div>
         </div>
       </div>
     </div>
