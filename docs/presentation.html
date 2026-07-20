@@ -293,16 +293,18 @@
       <span>Prepared by <b>Asad</b></span>
       <span>Team <b>Engineering</b></span>
       <span>Date <b>20 July 2026</b></span>
-      <span class="status-chip">Working prototype · v0.23.0</span>
+      <span class="status-chip">Working prototype · v0.24.1</span>
     </div>
   </section>
 
   <!-- SLIDE 1: WHAT'S NEW -->
   <section class="slide" id="slide-1">
     <div class="slide-body">
-      <div class="eyebrow">Since the last review · v0.19.1 → v0.23.0</div>
+      <div class="eyebrow">Since the last review · v0.19.1 → v0.24.1</div>
       <h2>What's changed</h2>
       <div class="card-grid cols-3">
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Jira-style ticket panel<span class="badge-new">New</span></h3>
+          <p>Color-coded status, type/priority icons, assignee &amp; reporter avatars, due date, parent/epic breadcrumb, copy-key button, and instant open with a loading skeleton instead of a blank panel.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Team-shared config<span class="badge-new">New</span></h3>
           <p>Branch/commit name templates and a committed <code>.loopline.json</code> so a whole team standardizes conventions from one file, without touching secrets.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3>
@@ -317,10 +319,10 @@
           <p>Jira, GitLab, and Anthropic service classes were previously untestable. A test-only <code>vscode</code> stub now makes them fully coverable.</p></div>
       </div>
       <div class="stat-row cols-4" style="margin-top:26px;">
-        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">491</div><div class="delta new">↑ from 161</div></div>
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">505</div><div class="delta new">↑ from 161</div></div>
         <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta new">↑ from 14</div></div>
         <div class="stat-tile"><div class="label">Source files covered</div><div class="value accent-aqua">39</div><div class="delta new">↑ from 31</div></div>
-        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">24</div><div class="delta">v0.1.0 → v0.23.0</div></div>
+        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">34</div><div class="delta">v0.1.0 → v0.24.1</div></div>
       </div>
     </div>
   </section>
@@ -371,7 +373,7 @@
   <section class="slide" id="slide-5">
     <div class="slide-body">
       <div class="eyebrow">4 · What's built — core workflow &amp; sidebar</div>
-      <h2>Prototype v0.23.0</h2>
+      <h2>Prototype v0.24.1</h2>
       <div class="card-grid cols-3">
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Loopline sidebar</h3><p>Dedicated activity-bar panel: current branch/ticket, active-sprint tickets grouped by status (In Progress expanded by default), color-coded icons by issue type. Click to branch, or open in Jira.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Branch creation</h3><p>Issue-type→prefix mapping, confirm/edit, existing-branch guard (check out / rename / cancel), optional fetch of a fresh base branch first.</p></div>
@@ -380,7 +382,7 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Jira Cloud + Server/DC</h3><p>Correct auth and search endpoints for both deployment types, with automatic sprint-unsupported fallback.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto ticket transitions</h3><p>Opt-in status moves on branch and MR creation, matched forgivingly against your team's actual workflow.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Impact tracking</h3><p>Live count of branches, commits, and MRs created through Loopline, plus an estimated time-saved figure with visible, adjustable assumptions.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Ticket details panel</h3><p>Themed webview opened automatically on branch creation — summary, type, status, rendered description, in-panel actions.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Ticket details panel<span class="badge-new">Updated</span></h3><p>Themed webview opened automatically on branch creation, restyled after Jira's own issue view — color-coded status, type/priority icons, assignee/reporter avatars, due date, parent/epic breadcrumb, copy-key button, and an instant open with a loading skeleton instead of a blank panel.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Status bar &amp; SCM buttons</h3><p>Ticket indicator in the status bar, Source Control view buttons for both main actions, dedicated Output channel with "Show Logs".</p></div>
       </div>
     </div>
@@ -424,7 +426,7 @@
       <div class="eyebrow">4 · Engineering quality</div>
       <h2>Tested, CI-backed, and growing steadily</h2>
       <div class="stat-row cols-4">
-        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">491</div><div class="delta">passing</div></div>
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">505</div><div class="delta">passing</div></div>
         <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta">unit + integration</div></div>
         <div class="stat-tile"><div class="label">Source files</div><div class="value accent-aqua">39</div><div class="delta">under coverage</div></div>
         <div class="stat-tile"><div class="label">CI pipeline stages</div><div class="value accent-violet">4</div><div class="delta">type-check → test → bundle → package</div></div>
@@ -491,7 +493,7 @@
     <div class="slide-body">
       <div class="eyebrow">8–9 · Effort, cost &amp; risk</div>
       <h2>Low ongoing burden, well-understood risks</h2>
-      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Rollout (roadmap #1) is small — days, mostly packaging, docs, and registry setup. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 491 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
+      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Rollout (roadmap #1) is small — days, mostly packaging, docs, and registry setup. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 505 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Third-party API changes</div>
         <p>Jira/GitLab are already supported with graceful fallbacks (Cloud vs Server, sprint-unsupported); changes are typically small, contained fixes.</p>
@@ -510,7 +512,7 @@
       </div>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Bus factor / maintenance</div>
-        <p>491 tests, CI-backed, documented codebase; low ongoing burden.</p>
+        <p>505 tests, CI-backed, documented codebase; low ongoing burden.</p>
       </div>
     </div>
   </section>
