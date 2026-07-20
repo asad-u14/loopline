@@ -39,6 +39,12 @@ export async function openTicketDetailsCommand(
   let issueType = ticket.issueType ?? "";
   let status = ticket.status ?? "";
   let description = "";
+  let assignee: string | undefined;
+  let reporter: string | undefined;
+  let priority: string | undefined;
+  let labels: string[] = [];
+  let created: string | undefined;
+  let updated: string | undefined;
 
   try {
     const issue = await withCancellableProgress(`Loopline: loading ${ticket.key}…`, (signal) =>
@@ -48,6 +54,12 @@ export async function openTicketDetailsCommand(
     issueType = issue.issueType || issueType;
     status = issue.status || status;
     description = issue.description || "";
+    assignee = issue.assignee;
+    reporter = issue.reporter;
+    priority = issue.priority;
+    labels = issue.labels;
+    created = issue.created;
+    updated = issue.updated;
   } catch (err) {
     if (isCancelled(err)) {
       return;
@@ -65,5 +77,11 @@ export async function openTicketDetailsCommand(
     status,
     description,
     jiraBaseUrl: cfg.jiraBaseUrl,
+    assignee,
+    reporter,
+    priority,
+    labels,
+    created,
+    updated,
   });
 }

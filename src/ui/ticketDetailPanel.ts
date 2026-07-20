@@ -5,6 +5,7 @@ import { withCancellableProgress, isCancelled } from "../util/progress";
 import { mdToHtml, escapeHtml } from "../util/markdown";
 import { topLevelEntries } from "../util/repo-layout";
 import { logError } from "../util/log";
+import { notablePriority, relativeTime } from "../util/tree-helpers";
 
 export interface TicketDetail {
   key: string;
@@ -13,6 +14,12 @@ export interface TicketDetail {
   status?: string;
   description: string;
   jiraBaseUrl: string;
+  assignee?: string;
+  reporter?: string;
+  priority?: string;
+  labels?: string[];
+  created?: string;
+  updated?: string;
 }
 
 // A single reused panel — opening another ticket updates it instead of stacking tabs.
@@ -109,10 +116,30 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   const descHtml = detail.description.trim()
     ? mdToHtml(detail.description)
     : `<p class="muted">No description on this ticket.</p>`;
+  const priority = notablePriority(detail.priority);
   const chips = [
     detail.issueType ? `<span class="chip">${escapeHtml(detail.issueType)}</span>` : "",
     detail.status ? `<span class="chip chip-status">${escapeHtml(detail.status)}</span>` : "",
+    priority ? `<span class="chip chip-priority">🔺 ${escapeHtml(priority)}</span>` : "",
+    detail.assignee ? `<span class="chip chip-assignee">👤 ${escapeHtml(detail.assignee)}</span>` : "",
   ].join("");
+
+  const reporterLine =
+    detail.reporter && detail.reporter !== detail.assignee
+      ? `<div class="meta-line">Reported by ${escapeHtml(detail.reporter)}</div>`
+      : "";
+
+  const labels = detail.labels ?? [];
+  const createdAgo = relativeTime(detail.created);
+  const updatedAgo = relativeTime(detail.updated);
+  const labelsPart = labels.length ? `Labels: ${labels.map(escapeHtml).join(" · ")}` : "";
+  const datesPart = [createdAgo ? `Created ${createdAgo} ago` : "", updatedAgo ? `Updated ${updatedAgo} ago` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const metaRow =
+    labelsPart || datesPart
+      ? `<div class="meta-row"><span>${labelsPart}</span><span>${datesPart}</span></div>`
+      : "";
 
   const aiButton = opts.aiEnabled
     ? `<button id="generate" class="btn">✨ Generate implementation suggestions</button>`
@@ -146,6 +173,13 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
     background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
   }
   .chip-status { background: var(--vscode-button-secondaryBackground, var(--vscode-badge-background)); }
+  .chip-priority, .chip-assignee { background: none; padding: 2px 0; color: var(--vscode-foreground); }
+  .meta-line { font-size: 12px; color: var(--vscode-descriptionForeground); margin-bottom: 4px; }
+  .meta-row {
+    font-size: 12px; color: var(--vscode-descriptionForeground);
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 22px; }
   .btn {
     font-family: inherit; font-size: 13px; cursor: pointer;
@@ -174,6 +208,8 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   <div class="key">${escapeHtml(detail.key)}</div>
   <h1 class="summary">${escapeHtml(detail.summary || "(no summary)")}</h1>
   <div class="chips">${chips}</div>
+  ${reporterLine}
+  ${metaRow}
   <div class="actions">
     <button id="createBranch" class="btn">Create branch from this ticket</button>
     <button id="openJira" class="btn secondary">Open in Jira ↗</button>

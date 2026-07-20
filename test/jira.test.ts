@@ -103,6 +103,12 @@ test("getIssue: normalizes a plain-string (Server-style) description", async () 
       issueType: "Bug",
       description: "Plain text description",
       status: "In Progress",
+      assignee: undefined,
+      reporter: undefined,
+      priority: undefined,
+      labels: [],
+      created: undefined,
+      updated: undefined,
     });
   } finally {
     await server.close();
@@ -136,6 +142,40 @@ test("getIssue: flattens an ADF (Cloud-style) description to plain text", async 
     const issue = await cloudService(server.url).getIssue("LPB-2");
     assert.match(issue.description, /Users can't log in\./);
     assert.match(issue.description, /Reproduce with any account\./);
+  } finally {
+    await server.close();
+  }
+});
+
+test("getIssue: maps assignee, reporter, priority, labels, and dates", async () => {
+  const server = await startMockServer([
+    {
+      status: 200,
+      body: {
+        key: "LPB-5",
+        fields: {
+          summary: "Fix login",
+          issuetype: { name: "Bug" },
+          description: "",
+          status: { name: "In Progress" },
+          assignee: { displayName: "Asad Ullah" },
+          reporter: { displayName: "Jane Doe" },
+          priority: { name: "High" },
+          labels: ["mobile", "css"],
+          created: "2026-07-17T10:00:00.000Z",
+          updated: "2026-07-20T08:00:00.000Z",
+        },
+      },
+    },
+  ]);
+  try {
+    const issue = await cloudService(server.url).getIssue("LPB-5");
+    assert.equal(issue.assignee, "Asad Ullah");
+    assert.equal(issue.reporter, "Jane Doe");
+    assert.equal(issue.priority, "High");
+    assert.deepEqual(issue.labels, ["mobile", "css"]);
+    assert.equal(issue.created, "2026-07-17T10:00:00.000Z");
+    assert.equal(issue.updated, "2026-07-20T08:00:00.000Z");
   } finally {
     await server.close();
   }

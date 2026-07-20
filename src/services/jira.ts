@@ -16,6 +16,12 @@ export interface JiraIssue {
   issueType: string;
   description: string;
   status: string;
+  assignee?: string;
+  reporter?: string;
+  priority?: string;
+  labels: string[];
+  created?: string;
+  updated?: string;
 }
 
 /** Lightweight issue shape for the assigned-tickets picker and sidebar. */
@@ -121,7 +127,12 @@ export class JiraService {
     try {
       const res = await this.http.get(
         `/rest/api/2/issue/${encodeURIComponent(key)}`,
-        { params: { fields: "summary,issuetype,description,status" }, signal }
+        {
+          params: {
+            fields: "summary,issuetype,description,status,assignee,reporter,priority,labels,created,updated",
+          },
+          signal,
+        }
       );
       const fields = res.data?.fields ?? {};
       return {
@@ -130,6 +141,12 @@ export class JiraService {
         issueType: fields.issuetype?.name ?? "",
         description: this.renderDescription(fields.description),
         status: fields.status?.name ?? "",
+        assignee: fields.assignee?.displayName,
+        reporter: fields.reporter?.displayName,
+        priority: fields.priority?.name,
+        labels: Array.isArray(fields.labels) ? fields.labels : [],
+        created: fields.created,
+        updated: fields.updated,
       };
     } catch (err) {
       throw this.toFriendlyError(err, key);
