@@ -330,7 +330,7 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   .meta-row {
     font-size: 12px; color: var(--vscode-descriptionForeground);
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    margin-bottom: 4px;
+    margin-bottom: 10px;
   }
   .reporter { display: inline-flex; align-items: center; gap: 5px; }
   .overdue { color: var(--vscode-errorForeground, #f14c4c); }
