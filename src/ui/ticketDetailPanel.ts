@@ -124,10 +124,8 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
     detail.assignee ? `<span class="chip chip-assignee">👤 ${escapeHtml(detail.assignee)}</span>` : "",
   ].join("");
 
-  const reporterLine =
-    detail.reporter && detail.reporter !== detail.assignee
-      ? `<div class="meta-line">Reported by ${escapeHtml(detail.reporter)}</div>`
-      : "";
+  const reporterPart =
+    detail.reporter && detail.reporter !== detail.assignee ? `Reported by ${escapeHtml(detail.reporter)}` : "";
 
   const labels = detail.labels ?? [];
   const createdAgo = relativeTime(detail.created);
@@ -136,10 +134,11 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   const datesPart = [createdAgo ? `Created ${createdAgo} ago` : "", updatedAgo ? `Updated ${updatedAgo} ago` : ""]
     .filter(Boolean)
     .join(" · ");
-  const metaRow =
-    labelsPart || datesPart
-      ? `<div class="meta-row"><span>${labelsPart}</span><span>${datesPart}</span></div>`
+  const reporterRow =
+    reporterPart || datesPart
+      ? `<div class="meta-row"><span>${reporterPart}</span><span>${datesPart}</span></div>`
       : "";
+  const labelsRow = labelsPart ? `<div class="meta-line">${labelsPart}</div>` : "";
 
   const aiButton = opts.aiEnabled
     ? `<button id="generate" class="btn">✨ Generate implementation suggestions</button>`
@@ -174,11 +173,11 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   }
   .chip-status { background: var(--vscode-button-secondaryBackground, var(--vscode-badge-background)); }
   .chip-priority, .chip-assignee { background: none; padding: 2px 0; color: var(--vscode-foreground); }
-  .meta-line { font-size: 12px; color: var(--vscode-descriptionForeground); margin-bottom: 4px; }
+  .meta-line { font-size: 12px; color: var(--vscode-descriptionForeground); margin-bottom: 16px; }
   .meta-row {
     font-size: 12px; color: var(--vscode-descriptionForeground);
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    margin-bottom: 16px;
+    margin-bottom: 4px;
   }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 22px; }
   .btn {
@@ -208,8 +207,8 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   <div class="key">${escapeHtml(detail.key)}</div>
   <h1 class="summary">${escapeHtml(detail.summary || "(no summary)")}</h1>
   <div class="chips">${chips}</div>
-  ${reporterLine}
-  ${metaRow}
+  ${reporterRow}
+  ${labelsRow}
   <div class="actions">
     <button id="createBranch" class="btn">Create branch from this ticket</button>
     <button id="openJira" class="btn secondary">Open in Jira ↗</button>
