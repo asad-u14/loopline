@@ -16,12 +16,17 @@ export interface JiraIssue {
   issueType: string;
   description: string;
   status: string;
+  /** Jira status category key: "new" | "indeterminate" | "done". Drives status chip color. */
+  statusCategory?: string;
   assignee?: string;
   reporter?: string;
   priority?: string;
   labels: string[];
   created?: string;
   updated?: string;
+  dueDate?: string;
+  /** Parent issue (subtask's parent, or epic for team-managed projects). */
+  parent?: { key: string; summary: string };
 }
 
 /** Lightweight issue shape for the assigned-tickets picker and sidebar. */
@@ -129,7 +134,8 @@ export class JiraService {
         `/rest/api/2/issue/${encodeURIComponent(key)}`,
         {
           params: {
-            fields: "summary,issuetype,description,status,assignee,reporter,priority,labels,created,updated",
+            fields:
+              "summary,issuetype,description,status,assignee,reporter,priority,labels,created,updated,duedate,parent",
           },
           signal,
         }
@@ -141,12 +147,17 @@ export class JiraService {
         issueType: fields.issuetype?.name ?? "",
         description: this.renderDescription(fields.description),
         status: fields.status?.name ?? "",
+        statusCategory: fields.status?.statusCategory?.key,
         assignee: fields.assignee?.displayName,
         reporter: fields.reporter?.displayName,
         priority: fields.priority?.name,
         labels: Array.isArray(fields.labels) ? fields.labels : [],
         created: fields.created,
         updated: fields.updated,
+        dueDate: fields.duedate,
+        parent: fields.parent
+          ? { key: fields.parent.key, summary: fields.parent.fields?.summary ?? "" }
+          : undefined,
       };
     } catch (err) {
       throw this.toFriendlyError(err, key);

@@ -39,12 +39,27 @@ export async function openTicketDetailsCommand(
   let issueType = ticket.issueType ?? "";
   let status = ticket.status ?? "";
   let description = "";
+  let statusCategory: string | undefined;
   let assignee: string | undefined;
   let reporter: string | undefined;
   let priority: string | undefined;
   let labels: string[] = [];
   let created: string | undefined;
   let updated: string | undefined;
+  let dueDate: string | undefined;
+  let parent: { key: string; summary: string } | undefined;
+
+  // Open the panel immediately with what's already known, showing a skeleton for
+  // the rest, rather than leaving it blank while the full ticket loads.
+  showTicketDetail(ctx, {
+    key: ticket.key,
+    summary,
+    issueType,
+    status,
+    description,
+    jiraBaseUrl: cfg.jiraBaseUrl,
+    loading: true,
+  });
 
   try {
     const issue = await withCancellableProgress(`Loopline: loading ${ticket.key}…`, (signal) =>
@@ -54,20 +69,22 @@ export async function openTicketDetailsCommand(
     issueType = issue.issueType || issueType;
     status = issue.status || status;
     description = issue.description || "";
+    statusCategory = issue.statusCategory;
     assignee = issue.assignee;
     reporter = issue.reporter;
     priority = issue.priority;
     labels = issue.labels;
     created = issue.created;
     updated = issue.updated;
+    dueDate = issue.dueDate;
+    parent = issue.parent;
   } catch (err) {
-    if (isCancelled(err)) {
-      return;
+    if (!isCancelled(err)) {
+      logError(`could not load ${ticket.key} details`, err);
+      vscode.window.showWarningMessage(
+        `Loopline: couldn't load the full ticket (${(err as Error).message}). Showing what's known.`
+      );
     }
-    logError(`could not load ${ticket.key} details`, err);
-    vscode.window.showWarningMessage(
-      `Loopline: couldn't load the full ticket (${(err as Error).message}). Showing what's known.`
-    );
   }
 
   showTicketDetail(ctx, {
@@ -75,6 +92,7 @@ export async function openTicketDetailsCommand(
     summary,
     issueType,
     status,
+    statusCategory,
     description,
     jiraBaseUrl: cfg.jiraBaseUrl,
     assignee,
@@ -83,5 +101,7 @@ export async function openTicketDetailsCommand(
     labels,
     created,
     updated,
+    dueDate,
+    parent,
   });
 }

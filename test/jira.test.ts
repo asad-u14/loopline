@@ -103,12 +103,15 @@ test("getIssue: normalizes a plain-string (Server-style) description", async () 
       issueType: "Bug",
       description: "Plain text description",
       status: "In Progress",
+      statusCategory: undefined,
       assignee: undefined,
       reporter: undefined,
       priority: undefined,
       labels: [],
       created: undefined,
       updated: undefined,
+      dueDate: undefined,
+      parent: undefined,
     });
   } finally {
     await server.close();
@@ -176,6 +179,51 @@ test("getIssue: maps assignee, reporter, priority, labels, and dates", async () 
     assert.deepEqual(issue.labels, ["mobile", "css"]);
     assert.equal(issue.created, "2026-07-17T10:00:00.000Z");
     assert.equal(issue.updated, "2026-07-20T08:00:00.000Z");
+  } finally {
+    await server.close();
+  }
+});
+
+test("getIssue: maps statusCategory, dueDate, and parent", async () => {
+  const server = await startMockServer([
+    {
+      status: 200,
+      body: {
+        key: "LPB-6",
+        fields: {
+          summary: "Fix login",
+          issuetype: { name: "Sub-task" },
+          description: "",
+          status: { name: "Done", statusCategory: { key: "done" } },
+          duedate: "2026-08-01",
+          parent: { key: "LPB-1", fields: { summary: "Parent story" } },
+        },
+      },
+    },
+  ]);
+  try {
+    const issue = await cloudService(server.url).getIssue("LPB-6");
+    assert.equal(issue.statusCategory, "done");
+    assert.equal(issue.dueDate, "2026-08-01");
+    assert.deepEqual(issue.parent, { key: "LPB-1", summary: "Parent story" });
+  } finally {
+    await server.close();
+  }
+});
+
+test("getIssue: no parent -> parent is undefined", async () => {
+  const server = await startMockServer([
+    {
+      status: 200,
+      body: {
+        key: "LPB-7",
+        fields: { summary: "Standalone", issuetype: { name: "Task" }, description: "", status: { name: "To Do" } },
+      },
+    },
+  ]);
+  try {
+    const issue = await cloudService(server.url).getIssue("LPB-7");
+    assert.equal(issue.parent, undefined);
   } finally {
     await server.close();
   }

@@ -163,6 +163,105 @@ test("openJira: does nothing when jiraBaseUrl is empty", async () => {
   assert.equal(opened, false);
 });
 
+// ---- openParentJira -----------------------------------------------------------
+
+test("openParentJira: opens the parent ticket URL externally", async () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ parent: { key: "LPB-1", summary: "Parent story" } }));
+
+  let openedUri: any;
+  vscode.env.openExternal = (async (uri: any) => {
+    openedUri = uri;
+    return true;
+  }) as any;
+
+  capturedPanel.webview._receiveMessage({ type: "openParentJira" });
+  await flush();
+  assert.equal(openedUri?.toString(), "https://acme.atlassian.net/browse/LPB-1");
+});
+
+test("openParentJira: does nothing when there's no parent", async () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail());
+
+  let opened = false;
+  vscode.env.openExternal = (async () => {
+    opened = true;
+    return true;
+  }) as any;
+
+  capturedPanel.webview._receiveMessage({ type: "openParentJira" });
+  await flush();
+  assert.equal(opened, false);
+});
+
+// ---- copyKey --------------------------------------------------------------------
+
+test("copyKey: writes the ticket key to the clipboard and confirms back to the webview", async () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ key: "LPB-77" }));
+
+  capturedPanel.webview._receiveMessage({ type: "copyKey" });
+  await flush();
+
+  assert.equal(await vscode.env.clipboard.readText(), "LPB-77");
+  const messages = capturedPanel.webview._postedMessages;
+  assert.ok(messages.some((m: any) => m.type === "copied"));
+});
+
+// ---- rendered HTML: metadata, status color, skeleton ---------------------------
+
+test("rendered HTML: color-codes the status chip by category", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ statusCategory: "done" }));
+  assert.match(capturedPanel.webview.html, /class="chip chip-status chip-status-done"/);
+});
+
+test("rendered HTML: an unknown status category doesn't get a color class on the chip itself", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ statusCategory: undefined }));
+  assert.match(capturedPanel.webview.html, /class="chip chip-status "/);
+});
+
+test("rendered HTML: loading shows a skeleton instead of the real description", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ loading: true, description: "" }));
+  assert.match(capturedPanel.webview.html, /class="skeleton skeleton-line"/);
+  assert.doesNotMatch(capturedPanel.webview.html, /No description on this ticket/);
+});
+
+test("rendered HTML: not loading shows the real description, not a skeleton", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ loading: false }));
+  assert.doesNotMatch(capturedPanel.webview.html, /class="skeleton skeleton-line"/);
+});
+
+test("rendered HTML: shows a parent/epic breadcrumb when a parent is present", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ parent: { key: "LPB-1", summary: "Parent story" } }));
+  assert.match(capturedPanel.webview.html, /id="openParent"/);
+  assert.match(capturedPanel.webview.html, /LPB-1: Parent story/);
+});
+
+test("rendered HTML: no breadcrumb when there's no parent", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail());
+  assert.doesNotMatch(capturedPanel.webview.html, /id="openParent"/);
+});
+
+test("rendered HTML: shows an overdue due date distinctly", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ dueDate: "2000-01-01" }));
+  assert.match(capturedPanel.webview.html, /Overdue by/);
+  assert.match(capturedPanel.webview.html, /class="overdue"/);
+});
+
+test("rendered HTML: includes a copy-key button next to the ticket key", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail());
+  assert.match(capturedPanel.webview.html, /id="copyKey"/);
+});
+
 // ---- createBranch -------------------------------------------------------------
 
 test("createBranch: executes loopline.tickets.createBranch with the ticket key", async () => {
