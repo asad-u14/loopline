@@ -10,6 +10,12 @@ export interface CommitGroup {
   subjects: string[];
 }
 
+/** A repo's commits for the day, grouped by ticket within that repo. */
+export interface RepoCommitGroup {
+  repoName: string;
+  groups: CommitGroup[];
+}
+
 /** Midnight, local time, for the given (or current) moment. */
 export function startOfDay(now: Date = new Date()): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -54,4 +60,18 @@ export function formatStandupFallback(groups: CommitGroup[]): string {
     lines.push("");
   }
   return lines.join("\n").trimEnd();
+}
+
+/**
+ * Deterministic fallback across every repo in the workspace — one heading per
+ * repo, then the same per-ticket breakdown `formatStandupFallback` produces.
+ */
+export function formatStandupFallbackByRepo(repos: RepoCommitGroup[]): string {
+  if (repos.length === 0) {
+    return "No commits to summarize.";
+  }
+  return repos
+    .map((r) => `### ${r.repoName}\n\n${formatStandupFallback(r.groups)}`)
+    .join("\n\n")
+    .trimEnd();
 }

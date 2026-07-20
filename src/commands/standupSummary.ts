@@ -1,26 +1,34 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { GitService } from "../services/git";
-import { resolveRepoRoot, buildAiService } from "../util/workspace";
+import { discoverRepos, buildAiService } from "../util/workspace";
 import { withCancellableProgress, isCancelled } from "../util/progress";
 import { logError } from "../util/log";
-import { groupCommitsByTicket, formatStandupFallback, startOfDay } from "../util/standup";
+import { groupCommitsByTicket, formatStandupFallbackByRepo, startOfDay, RepoCommitGroup } from "../util/standup";
 import { showStandupSummary } from "../ui/standupPanel";
 
 export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promise<void> {
-  const repoRoot = await resolveRepoRoot(ctx);
-  if (!repoRoot) {
-    return;
-  }
-  const git = new GitService(repoRoot);
-  if (!(await git.isRepo())) {
-    vscode.window.showErrorMessage("Loopline: this folder isn't a git repository.");
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    vscode.window.showErrorMessage("Loopline: open a folder or workspace first.");
     return;
   }
 
-  let subjects: string[] = [];
+  let repoRoots: string[] = [];
+  let repoGroups: RepoCommitGroup[] = [];
   try {
-    subjects = await withCancellableProgress("Loopline: reading today's commits…", () =>
-      git.listMyCommitsSince(startOfDay().toISOString())
+    repoGroups = await withCancellableProgress(
+      "Loopline: reading today's commits across every repo…",
+      async () => {
+        repoRoots = await discoverRepos(folders.map((f) => f.uri.fsPath));
+        const results = await Promise.all(
+          repoRoots.map(async (root) => {
+            const subjects = await new GitService(root).listMyCommitsSince(startOfDay().toISOString());
+            return { repoName: path.basename(root) || root, groups: groupCommitsByTicket(subjects) };
+          })
+        );
+        return results.filter((r) => r.groups.length > 0);
+      }
     );
   } catch (err) {
     if (isCancelled(err)) {
@@ -31,12 +39,16 @@ export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promi
     return;
   }
 
-  if (subjects.length === 0) {
+  if (repoRoots.length === 0) {
+    vscode.window.showErrorMessage("Loopline: no git repository found in this workspace.");
+    return;
+  }
+
+  if (repoGroups.length === 0) {
     vscode.window.showInformationMessage("Loopline: no commits found for today yet.");
     return;
   }
 
-  const groups = groupCommitsByTicket(subjects);
   const dateLabel = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "short",
@@ -44,12 +56,12 @@ export async function standupSummaryCommand(ctx: vscode.ExtensionContext): Promi
   });
 
   const anthropic = await buildAiService(ctx);
-  let markdown = formatStandupFallback(groups);
+  let markdown = formatStandupFallbackByRepo(repoGroups);
   let aiGenerated = false;
   if (anthropic) {
     try {
       markdown = await withCancellableProgress("Loopline: drafting standup summary…", (signal) =>
-        anthropic.generateStandupSummary({ groups, dateLabel }, signal)
+        anthropic.generateStandupSummary({ repos: repoGroups, dateLabel }, signal)
       );
       aiGenerated = true;
     } catch (err) {

@@ -246,7 +246,7 @@ test("generateStandupSummary: returns the drafted summary text", async () => {
   try {
     const text = await service(server.url).generateStandupSummary({
       dateLabel: "today",
-      groups: [{ ticketKey: "LPB-1", subjects: ["feat: LPB-1 add login"] }],
+      repos: [{ repoName: "loopline", groups: [{ ticketKey: "LPB-1", subjects: ["feat: LPB-1 add login"] }] }],
     });
     assert.equal(text, "- LPB-1: added login");
   } finally {

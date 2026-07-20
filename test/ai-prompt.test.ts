@@ -161,18 +161,38 @@ test("parseTicketCheckVerdict: missing/malformed verdict line defaults to gaps, 
 
 // ---- standup summary ---------------------------------------------------------
 
-test("buildStandupUserPrompt: includes the date, each ticket, and its commits", () => {
+test("buildStandupUserPrompt: includes the date, each repo, ticket, and its commits", () => {
   const prompt = buildStandupUserPrompt({
     dateLabel: "Wed, Jul 16",
-    groups: [
-      { ticketKey: "LPB-1", subjects: ["add login", "add token refresh"] },
-      { ticketKey: undefined, subjects: ["tidy up"] },
+    repos: [
+      {
+        repoName: "loopline",
+        groups: [
+          { ticketKey: "LPB-1", subjects: ["add login", "add token refresh"] },
+          { ticketKey: undefined, subjects: ["tidy up"] },
+        ],
+      },
     ],
   });
   assert.match(prompt, /Wed, Jul 16/);
+  assert.match(prompt, /Repository: loopline/);
   assert.match(prompt, /LPB-1:/);
   assert.match(prompt, /- add login/);
   assert.match(prompt, /- add token refresh/);
   assert.match(prompt, /No ticket:/);
   assert.match(prompt, /- tidy up/);
+});
+
+test("buildStandupUserPrompt: multiple repos each get their own section", () => {
+  const prompt = buildStandupUserPrompt({
+    dateLabel: "Wed, Jul 16",
+    repos: [
+      { repoName: "api", groups: [{ ticketKey: "LPB-1", subjects: ["fix bug"] }] },
+      { repoName: "web", groups: [{ ticketKey: "LPB-2", subjects: ["add page"] }] },
+    ],
+  });
+  assert.match(prompt, /Repository: api/);
+  assert.match(prompt, /Repository: web/);
+  assert.match(prompt, /- fix bug/);
+  assert.match(prompt, /- add page/);
 });

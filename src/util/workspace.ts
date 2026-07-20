@@ -97,7 +97,7 @@ export async function resolveRepoRoot(
  * inside a repo, that repo root is used; otherwise we look one level down for
  * repos (the "container folder of several repos" case).
  */
-async function discoverRepos(dirs: string[]): Promise<string[]> {
+export async function discoverRepos(dirs: string[]): Promise<string[]> {
   const roots = new Set<string>();
   for (const dir of dirs) {
     const own = await findRepoRootForDir(dir);

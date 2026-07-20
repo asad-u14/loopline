@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { groupCommitsByTicket, formatStandupFallback, startOfDay } from "../src/util/standup";
+import {
+  groupCommitsByTicket,
+  formatStandupFallback,
+  formatStandupFallbackByRepo,
+  startOfDay,
+} from "../src/util/standup";
 
 test("groupCommitsByTicket: groups by the ticket key found in each subject", () => {
   const groups = groupCommitsByTicket([
@@ -57,6 +62,23 @@ test("formatStandupFallback: singular commit count isn't pluralized", () => {
 
 test("formatStandupFallback: no groups reports nothing to summarize, not an empty document", () => {
   assert.equal(formatStandupFallback([]), "No commits to summarize.");
+});
+
+test("formatStandupFallbackByRepo: headings each repo, then its per-ticket breakdown", () => {
+  const text = formatStandupFallbackByRepo([
+    { repoName: "api", groups: [{ ticketKey: "LPB-1", subjects: ["fix bug"] }] },
+    { repoName: "web", groups: [{ ticketKey: undefined, subjects: ["tidy up"] }] },
+  ]);
+  assert.match(text, /### api/);
+  assert.match(text, /### web/);
+  assert.match(text, /\*\*LPB-1\*\* \(1 commit\)/);
+  assert.match(text, /- fix bug/);
+  assert.match(text, /\*\*Other\*\* \(1 commit\)/);
+  assert.match(text, /- tidy up/);
+});
+
+test("formatStandupFallbackByRepo: no repos reports nothing to summarize", () => {
+  assert.equal(formatStandupFallbackByRepo([]), "No commits to summarize.");
 });
 
 test("startOfDay: zeroes out the time, keeps the calendar date", () => {

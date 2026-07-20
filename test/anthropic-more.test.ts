@@ -145,7 +145,7 @@ test("generateStandupSummary: an empty text response is treated as an error", as
       () =>
         service(server.url).generateStandupSummary({
           dateLabel: "today",
-          groups: [{ ticketKey: "LPB-1", subjects: ["feat: LPB-1 add login"] }],
+          repos: [{ repoName: "loopline", groups: [{ ticketKey: "LPB-1", subjects: ["feat: LPB-1 add login"] }] }],
         }),
       /empty response/i
     );
@@ -161,7 +161,7 @@ test("generateStandupSummary: a non-200 response is turned into a friendly error
       () =>
         service(server.url).generateStandupSummary({
           dateLabel: "today",
-          groups: [{ ticketKey: "LPB-1", subjects: ["feat: LPB-1 add login"] }],
+          repos: [{ repoName: "loopline", groups: [{ ticketKey: "LPB-1", subjects: ["feat: LPB-1 add login"] }] }],
         }),
       AnthropicError
     );

@@ -146,24 +146,33 @@ export interface StandupCommitGroup {
   subjects: string[];
 }
 
-export interface StandupPromptInput {
+/** A repo's commits for the day, grouped by ticket within that repo. */
+export interface StandupRepoGroup {
+  repoName: string;
   groups: StandupCommitGroup[];
+}
+
+export interface StandupPromptInput {
+  repos: StandupRepoGroup[];
   dateLabel: string;
 }
 
 export const STANDUP_SYSTEM_PROMPT = [
-  "You are drafting a concise daily standup update from a developer's own commit messages.",
+  "You are drafting a concise daily standup update from a developer's own commit messages, gathered across every repo in their workspace.",
   "Base everything ONLY on the commit subjects provided — never invent work that isn't implied by them.",
-  "Group by ticket. For each ticket, write one short line summarizing the work in plain language — rephrase, don't just repeat the raw commit text verbatim, and don't invent details that aren't there.",
-  "Commits with no recognizable ticket key go under a short 'Other' line.",
+  "Group by repository first, then by ticket within each repository. For each ticket, write one short line summarizing the work in plain language — rephrase, don't just repeat the raw commit text verbatim, and don't invent details that aren't there.",
+  "Commits with no recognizable ticket key go under a short 'Other' line within their repo.",
   "Keep the whole thing skimmable — a teammate should be able to read it in ten seconds. One bullet per ticket, not per commit.",
   "Do not wrap the whole response in a code fence. Do not add a title heading.",
 ].join("\n");
 
 export function buildStandupUserPrompt(input: StandupPromptInput): string {
-  const parts: string[] = [`Commits made ${input.dateLabel}, grouped by ticket:`];
-  for (const g of input.groups) {
-    parts.push(`${g.ticketKey ?? "No ticket"}:\n${g.subjects.map((s) => `- ${s}`).join("\n")}`);
+  const parts: string[] = [`Commits made ${input.dateLabel}, grouped by repository and ticket:`];
+  for (const repo of input.repos) {
+    const ticketLines = repo.groups
+      .map((g) => `${g.ticketKey ?? "No ticket"}:\n${g.subjects.map((s) => `- ${s}`).join("\n")}`)
+      .join("\n\n");
+    parts.push(`Repository: ${repo.repoName}\n${ticketLines}`);
   }
   parts.push("Write the standup update now.");
   return parts.join("\n\n");
