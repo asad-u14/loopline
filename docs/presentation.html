@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loopline — Jira → GitLab Workflow Automation</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --surface-2:      #f9f9f7;
+    --card:           #ffffff;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --border:         rgba(11,11,11,0.10);
+    --gridline:       #e1e0d9;
+
+    --series-1: #2a78d6; /* blue   - primary / identity */
+    --series-2: #008300; /* green  - core workflow */
+    --series-3: #e87ba4; /* magenta */
+    --series-4: #eda100; /* yellow */
+    --series-5: #1baf7a; /* aqua   - AI */
+    --series-6: #eb6834; /* orange - reliability */
+    --series-7: #4a3aa7; /* violet - config */
+    --series-8: #e34948; /* red */
+
+    --good:     #0ca30c;
+    --warning:  #fab219;
+    --serious:  #ec835a;
+    --critical: #d03b3b;
+
+    --seq-100: #cde2fb; --seq-450: #2a78d6; --seq-700: #0d366b;
+
+    --font: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--surface-2);
+    color: var(--text-primary);
+    overflow: hidden;
+  }
+
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 64px 88px;
+    background: var(--surface-1);
+    overflow-y: auto;
+  }
+  .slide.active { display: flex; }
+  .slide .eyebrow {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--series-1);
+    margin-bottom: 10px;
+  }
+  .slide h1 {
+    font-size: 40px;
+    line-height: 1.15;
+    margin: 0 0 8px 0;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .slide h2 {
+    font-size: 30px;
+    margin: 0 0 24px 0;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .slide .sub {
+    font-size: 17px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+    max-width: 900px;
+  }
+  .slide p { line-height: 1.55; color: var(--text-secondary); }
+  .slide-body { max-width: 1180px; width: 100%; margin: 0 auto; }
+
+  /* ---------- Title slide ---------- */
+  #slide-0 { justify-content: center; align-items: flex-start; background: var(--surface-1); }
+  #slide-0::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(600px 400px at 88% 8%, rgba(42,120,214,0.10), transparent 60%),
+      radial-gradient(500px 350px at 6% 92%, rgba(27,175,122,0.08), transparent 60%);
+    pointer-events: none;
+  }
+  .logo-mark {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--series-1), var(--series-5));
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 800; font-size: 22px;
+    margin-bottom: 28px;
+  }
+  #slide-0 h1 { font-size: 52px; max-width: 900px; }
+  #slide-0 .tagline { font-size: 20px; color: var(--text-secondary); max-width: 720px; margin-bottom: 40px; }
+  .meta-row {
+    display: flex; gap: 28px; flex-wrap: wrap;
+    font-size: 14px; color: var(--text-muted);
+    border-top: 1px solid var(--gridline);
+    padding-top: 18px; width: 100%; max-width: 900px;
+  }
+  .meta-row b { color: var(--text-primary); font-weight: 600; }
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(12,163,12,0.10); color: var(--good);
+    border: 1px solid rgba(12,163,12,0.25);
+    padding: 4px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+  }
+  .status-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+
+  /* ---------- Stat tiles ---------- */
+  .stat-row { display: grid; gap: 16px; margin: 8px 0 28px 0; }
+  .stat-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .stat-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .stat-tile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .stat-tile .label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+  .stat-tile .value { font-size: 34px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
+  .stat-tile .value.accent-blue   { color: var(--series-1); }
+  .stat-tile .value.accent-green  { color: var(--series-2); }
+  .stat-tile .value.accent-aqua   { color: var(--series-5); }
+  .stat-tile .value.accent-violet { color: var(--series-7); }
+  .stat-tile .delta { font-size: 13px; margin-top: 8px; color: var(--text-muted); }
+  .stat-tile .delta.new { color: var(--good); font-weight: 600; }
+
+  /* ---------- Card grids ---------- */
+  .card-grid { display: grid; gap: 16px; }
+  .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .card .dot {
+    width: 10px; height: 10px; border-radius: 3px;
+    display: inline-block; margin-right: 8px;
+  }
+  .card h3 { font-size: 16px; margin: 0 0 8px 0; font-weight: 700; display: flex; align-items: center; }
+  .card p { font-size: 14px; margin: 0; line-height: 1.5; }
+  .card .badge-new {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    background: var(--good); color: white; border-radius: 5px;
+    padding: 2px 6px; margin-left: 8px; text-transform: uppercase;
+  }
+
+  /* ---------- Numbered steps ---------- */
+  .step-list { display: flex; flex-direction: column; gap: 14px; }
+  .step {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+  }
+  .step .num {
+    flex: none; width: 30px; height: 30px; border-radius: 8px;
+    background: var(--series-1); color: white; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .step h4 { margin: 0 0 4px 0; font-size: 15px; font-weight: 700; }
+  .step p { margin: 0; font-size: 14px; }
+
+  /* ---------- Problem list ---------- */
+  .problem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .problem-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 18px 16px 18px; border-top: 3px solid var(--series-8);
+  }
+  .problem-card h4 { margin: 0 0 6px 0; font-size: 14.5px; }
+  .problem-card p { margin: 0; font-size: 13px; }
+  .cost-strip {
+    margin-top: 24px; background: rgba(211,59,59,0.06);
+    border: 1px solid rgba(211,59,59,0.20);
+    border-radius: 12px; padding: 16px 20px; font-size: 14px; color: var(--text-primary);
+  }
+  .cost-strip b { color: var(--critical); }
+
+  /* ---------- Table ---------- */
+  table.simple { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.simple th {
+    text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-muted); padding: 8px 14px; border-bottom: 1px solid var(--gridline);
+  }
+  table.simple td { padding: 12px 14px; border-bottom: 1px solid var(--gridline); vertical-align: top; color: var(--text-secondary); }
+  table.simple tr:last-child td { border-bottom: none; }
+  table.simple td.strong { color: var(--text-primary); font-weight: 600; }
+
+  /* ---------- Roadmap ---------- */
+  .roadmap-list { display: flex; flex-direction: column; gap: 10px; }
+  .rm-item {
+    display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: center;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 18px;
+  }
+  .rm-rank {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: var(--series-1);
+  }
+  .rm-item .title { font-weight: 600; font-size: 14.5px; }
+  .rm-item .desc { font-weight: 400; color: var(--text-secondary); font-size: 13.5px; margin-top: 2px; }
+  .rm-tag {
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-muted); white-space: nowrap;
+  }
+  .rm-tag.high { background: rgba(12,163,12,0.12); color: var(--good); }
+
+  /* ---------- Risk table ---------- */
+  .risk-row { display: grid; grid-template-columns: 220px 1fr; gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--gridline); align-items: start; }
+  .risk-row:last-child { border-bottom: none; }
+  .risk-label { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+  .risk-icon { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .risk-icon.good { background: var(--good); }
+  .risk-icon.warning { background: var(--warning); }
+  .risk-icon.serious { background: var(--serious); }
+  .risk-row p { margin: 0; font-size: 14px; }
+
+  /* ---------- Ask list ---------- */
+  .ask-list { display: flex; flex-direction: column; gap: 14px; }
+  .ask-item { display: flex; gap: 16px; align-items: flex-start; }
+  .ask-check {
+    flex: none; width: 26px; height: 26px; border-radius: 7px;
+    border: 2px solid var(--series-1); display: flex; align-items: center; justify-content: center;
+    color: var(--series-1); font-weight: 700; font-size: 14px; margin-top: 2px;
+  }
+  .ask-item h4 { margin: 0 0 3px 0; font-size: 16px; }
+  .ask-item p { margin: 0; font-size: 14px; }
+
+  /* ---------- footer / progress ---------- */
+  .slide-footer {
+    position: absolute; bottom: 22px; left: 88px; right: 88px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--text-muted);
+  }
+  .progress-track { position: fixed; top: 0; left: 0; height: 3px; background: var(--gridline); width: 100%; z-index: 20; }
+  .progress-fill { height: 100%; background: var(--series-1); transition: width .25s ease; }
+
+  .nav-controls {
+    position: fixed; bottom: 20px; right: 24px; z-index: 30;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 8px 14px; box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .nav-btn {
+    border: none; background: var(--surface-2); color: var(--text-primary);
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    font-size: 15px; display: flex; align-items: center; justify-content: center;
+  }
+  .nav-btn:hover { background: var(--series-1); color: white; }
+  .nav-count { font-variant-numeric: tabular-nums; min-width: 46px; text-align: center; }
+
+  @media print {
+    .nav-controls, .progress-track { display: none; }
+    .slide { position: relative; display: flex !important; page-break-after: always; height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 0: TITLE -->
+  <section class="slide active" id="slide-0">
+    <div class="logo-mark">L</div>
+    <h1>Loopline</h1>
+    <div class="tagline">Jira → GitLab workflow automation for VS Code — pick ticket, branch, commit, push, and open the merge request, all from the editor.</div>
+    <div class="meta-row">
+      <span>Prepared by <b>Asad</b></span>
+      <span>Team <b>Engineering</b></span>
+      <span>Date <b>20 July 2026</b></span>
+      <span class="status-chip">Working prototype · v0.23.0</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 1: WHAT'S NEW -->
+  <section class="slide" id="slide-1">
+    <div class="slide-body">
+      <div class="eyebrow">Since the last review · v0.19.1 → v0.23.0</div>
+      <h2>What's changed</h2>
+      <div class="card-grid cols-3">
+        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Team-shared config<span class="badge-new">New</span></h3>
+          <p>Branch/commit name templates and a committed <code>.loopline.json</code> so a whole team standardizes conventions from one file, without touching secrets.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3>
+          <p>Creating an MR can now draft a bullet into the project's <code>CHANGELOG.md</code> under the right section automatically — no AI required.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3>
+          <p>Groups today's commits by ticket and drafts a "what I did" note — AI-rephrased if enabled, plain bullets if not — in a themed panel.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>OpenAI-compatible gateway<span class="badge-new">New</span></h3>
+          <p>All AI features can now run against an internal OpenAI-compatible gateway (e.g. Bedrock behind a corporate proxy), not just Anthropic — one switch, same features.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-6)"></span>Sidebar reliability</h3>
+          <p>The "Current" ticket row now tracks external branch switches (e.g. terminal <code>git checkout</code>) instantly, not just on window focus.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Test infrastructure unlocked</h3>
+          <p>Jira, GitLab, and Anthropic service classes were previously untestable. A test-only <code>vscode</code> stub now makes them fully coverable.</p></div>
+      </div>
+      <div class="stat-row cols-4" style="margin-top:26px;">
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">491</div><div class="delta new">↑ from 161</div></div>
+        <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta new">↑ from 14</div></div>
+        <div class="stat-tile"><div class="label">Source files covered</div><div class="value accent-aqua">39</div><div class="delta new">↑ from 31</div></div>
+        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">24</div><div class="delta">v0.1.0 → v0.23.0</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: EXEC SUMMARY -->
+  <section class="slide" id="slide-2">
+    <div class="slide-body">
+      <div class="eyebrow">1 · Executive summary</div>
+      <h2>The whole ticket-to-MR loop, in a couple of clicks</h2>
+      <p style="font-size:16px; max-width:920px;">Loopline is a working VS Code extension that automates the repetitive, error-prone steps between picking up a Jira ticket and opening a GitLab merge request. Today those steps are done by hand, inconsistently, dozens of times a week per developer. Loopline turns <b style="color:var(--text-primary)">pick ticket → branch → commit → push → merge request → ticket status</b> into a couple of clicks, with naming and commit conventions enforced automatically, surfaced in a dedicated sidebar that also tracks its own impact.</p>
+      <div class="stat-row cols-3" style="margin-top:20px;">
+        <div class="stat-tile"><div class="label">Status</div><div class="value accent-green" style="font-size:22px;">Functional prototype</div><div class="delta">In active use through 24 iterative releases</div></div>
+        <div class="stat-tile"><div class="label">Core actions automated</div><div class="value accent-blue">2</div><div class="delta">Create Branch · Commit, Push &amp; Create MR</div></div>
+        <div class="stat-tile"><div class="label">Optional AI capabilities</div><div class="value accent-aqua">4</div><div class="delta">MR descriptions · plans · gap-check · standup</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: PROBLEM -->
+  <section class="slide" id="slide-3">
+    <div class="slide-body">
+      <div class="eyebrow">2 · Problem statement</div>
+      <h2>Every ticket needs the same manual, low-value steps</h2>
+      <div class="problem-grid">
+        <div class="problem-card"><h4>Branch creation</h4><p>Copy the ticket key and title from Jira, hand-format a branch name, hope it matches team convention.</p></div>
+        <div class="problem-card"><h4>Commit messages</h4><p>Manually type conventional-commit prefixes and re-type the ticket key every time.</p></div>
+        <div class="problem-card"><h4>Push + merge request</h4><p>Push, open GitLab, create the MR, write a description, remember to link the ticket.</p></div>
+        <div class="problem-card"><h4>Ticket status</h4><p>Switch back to Jira and move the ticket to In Progress / In Review — frequently forgotten.</p></div>
+      </div>
+      <div class="cost-strip">The cost: <b>wasted time and context-switching</b> across three tools for purely mechanical work; <b>inconsistent naming</b> that weakens code↔ticket traceability; <b>stale Jira boards</b> because status updates depend on memory; and <b>thin MR descriptions</b> that slow reviewers down. None of it is hard — it's friction, repeated all day, that adds up across the team.</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: SOLUTION -->
+  <section class="slide" id="slide-4">
+    <div class="slide-body">
+      <div class="eyebrow">3 · Proposed solution</div>
+      <h2>Two commands and a sidebar collapse the whole loop</h2>
+      <div class="step-list">
+        <div class="step"><div class="num">1</div><div><h4>Create Branch from Jira Ticket</h4><p>Pick from your active-sprint tickets in the sidebar or a quick-pick — no typing keys from memory. Loopline generates a convention-correct branch like <code>bugfix/LPB-1234-login-fails</code>, optionally fetches the base branch first, checks it out, opens the ticket description alongside your editor, and can move the ticket to In Progress.</p></div></div>
+        <div class="step"><div class="num">2</div><div><h4>Commit, Push &amp; Create MR</h4><p>Loopline reads the ticket key back out of the branch name, builds a conventional commit (<code>feat: LPB-1234 …</code>), pushes with upstream tracking, opens a GitLab MR with an auto-generated description, and can move the ticket to In Review.</p></div></div>
+      </div>
+      <p style="margin-top:18px; font-size:14.5px;">Everything conventional is enforced by default and configurable per team — including, since v0.21.0, via a single committed <code>.loopline.json</code>.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: WHAT'S BUILT - CORE + SIDEBAR -->
+  <section class="slide" id="slide-5">
+    <div class="slide-body">
+      <div class="eyebrow">4 · What's built — core workflow &amp; sidebar</div>
+      <h2>Prototype v0.23.0</h2>
+      <div class="card-grid cols-3">
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Loopline sidebar</h3><p>Dedicated activity-bar panel: current branch/ticket, active-sprint tickets grouped by status (In Progress expanded by default), color-coded icons by issue type. Click to branch, or open in Jira.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Branch creation</h3><p>Issue-type→prefix mapping, confirm/edit, existing-branch guard (check out / rename / cancel), optional fetch of a fresh base branch first.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Commit, push &amp; MR</h3><p>Duplicate-MR detection, automatic GitLab project detection from the git remote, staging that respects what you've already staged.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Single-commit mode</h3><p>Re-running commit on a branch with existing commits offers to squash into one and force-push safely with <code>--force-with-lease</code>.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Jira Cloud + Server/DC</h3><p>Correct auth and search endpoints for both deployment types, with automatic sprint-unsupported fallback.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto ticket transitions</h3><p>Opt-in status moves on branch and MR creation, matched forgivingly against your team's actual workflow.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Impact tracking</h3><p>Live count of branches, commits, and MRs created through Loopline, plus an estimated time-saved figure with visible, adjustable assumptions.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Ticket details panel</h3><p>Themed webview opened automatically on branch creation — summary, type, status, rendered description, in-panel actions.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Status bar &amp; SCM buttons</h3><p>Ticket indicator in the status bar, Source Control view buttons for both main actions, dedicated Output channel with "Show Logs".</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: WHAT'S BUILT - AI -->
+  <section class="slide" id="slide-6">
+    <div class="slide-body">
+      <div class="eyebrow">4 · What's built — AI capabilities (all opt-in)</div>
+      <h2>Optional, reviewable, and now provider-flexible</h2>
+      <div class="card-grid cols-2">
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI-generated MR descriptions</h3><p>Drafts a Summary / Changes / Why / Testing body from the diff and ticket — reviewed and edited by you before it posts. Falls back to a deterministic file-list description if disabled.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI implementation suggestions</h3><p>After a branch is created, drafts a starting plan (goal, likely areas to change, edge cases, tests, open questions) grounded in the ticket and repo layout.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Acceptance-criteria coverage check</h3><p>Before the commit, asks whether the diff addresses what the ticket requires. Silent when complete; pauses with "Commit anyway / Cancel" otherwise. Fails open on any error.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3><p>Groups today's commits by ticket key and rephrases each into one grounded line — or a plain bulleted list with AI off. Opens in a themed, copy-to-clipboard panel.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Dual AI provider<span class="badge-new">New</span></h3><p>Anthropic Messages API, or an OpenAI-compatible internal gateway (e.g. Bedrock behind a corporate proxy) — one setting, same feature set, same review-before-send model.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3><p>No AI involved: creating an MR can draft a bullet into <code>CHANGELOG.md</code> from the ticket key and commit summary, filed under the right section by branch prefix.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: WHAT'S BUILT - RELIABILITY & CONFIG -->
+  <section class="slide" id="slide-7">
+    <div class="slide-body">
+      <div class="eyebrow">4 · What's built — reliability, connectivity &amp; team config</div>
+      <h2>Built to survive a real corporate network</h2>
+      <div class="card-grid cols-3">
+        <div class="card"><h3><span class="dot" style="background:var(--series-6)"></span>Proxy support</h3><p><code>HTTPS_PROXY</code>/<code>HTTP_PROXY</code>/<code>NO_PROXY</code>, plus an explicit override — since Node doesn't inherit the OS proxy.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-6)"></span>Corporate CA support</h3><p>Trusts private/corporate CAs for self-hosted Jira/GitLab behind an inspecting proxy, with a clearly-marked, discouraged insecure-TLS escape hatch.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-6)"></span>Diagnose Connection</h3><p>One-click report: versions, proxy config, loaded CAs, DNS, and a live authenticated call to each service with the precise failure code. Tokens never logged.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Branch/commit templates<span class="badge-new">New</span></h3><p>Token-based templates reshape generated names per team, defaulting to today's exact format so nothing changes unless edited.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>.loopline.json<span class="badge-new">New</span></h3><p>One committed config file standardizes conventions for the whole team on clone — read-only unless scaffolded explicitly, never secrets.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Guided setup wizard</h3><p>Live credential validation for Jira, GitLab, and the chosen AI provider. All secrets in VS Code Secret Storage — never in settings files.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: ENGINEERING QUALITY -->
+  <section class="slide" id="slide-8">
+    <div class="slide-body">
+      <div class="eyebrow">4 · Engineering quality</div>
+      <h2>Tested, CI-backed, and growing steadily</h2>
+      <div class="stat-row cols-4">
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">491</div><div class="delta">passing</div></div>
+        <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta">unit + integration</div></div>
+        <div class="stat-tile"><div class="label">Source files</div><div class="value accent-aqua">39</div><div class="delta">under coverage</div></div>
+        <div class="stat-tile"><div class="label">CI pipeline stages</div><div class="value accent-violet">4</div><div class="delta">type-check → test → bundle → package</div></div>
+      </div>
+      <p style="margin-top:8px; font-size:14.5px;">Jira, GitLab, and Anthropic/OpenAI service classes were previously untestable outside the extension host — a minimal test-only <code>vscode</code> stub and a local HTTP mock server now give real coverage of request shapes and every mapped error status (401/403/404/429, Cloud-vs-Server hints, sprint-unsupported retries). A bundled build keeps startup fast.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: VALUE -->
+  <section class="slide" id="slide-9">
+    <div class="slide-body">
+      <div class="eyebrow">5 · Value / business case</div>
+      <h2>Impact is measured, not estimated</h2>
+      <p style="font-size:15px; max-width:920px;">The sidebar's Impact row turns the time-savings case from a claim into a live count, as a by-product of normal use — alongside an estimated time-saved figure computed from adjustable per-action assumptions that are always visible next to the number, never hidden behind it.</p>
+      <div class="stat-row cols-3" style="margin-top:8px;">
+        <div class="stat-tile"><div class="label">Default assumption / branch</div><div class="value accent-blue">15<span style="font-size:16px;font-weight:600;"> min</span></div></div>
+        <div class="stat-tile"><div class="label">Default assumption / commit</div><div class="value accent-green">5<span style="font-size:16px;font-weight:600;"> min</span></div></div>
+        <div class="stat-tile"><div class="label">Default assumption / MR</div><div class="value accent-aqua">10<span style="font-size:16px;font-weight:600;"> min</span></div></div>
+      </div>
+      <table class="simple" style="margin-top:10px;">
+        <tr><th>Scaling sanity check</th><th>Figure</th></tr>
+        <tr><td>1 developer × ~8 ticket cycles/week × ~9 min saved</td><td class="strong">≈ 1.2 hours/week</td></tr>
+        <tr><td>A 10-person team, same rate</td><td class="strong">≈ 0.3 FTE of overhead removed</td></tr>
+        <tr><td>Pilot reporting example</td><td class="strong">"40 branches · 65 commits · 22 MRs automated this sprint"</td></tr>
+      </table>
+      <p style="margin-top:14px; font-size:14px;">Beyond time: every branch and commit follows convention, strengthening code↔ticket traceability; Jira boards stay accurate as a by-product of the work; MR descriptions are richer and more consistent; and the acceptance-criteria check catches ticket/diff mismatches before a reviewer has to.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 10: SECURITY -->
+  <section class="slide" id="slide-10">
+    <div class="slide-body">
+      <div class="eyebrow">6 · Security &amp; privacy</div>
+      <h2>Off by default, reviewable, and locally scoped</h2>
+      <div class="card-grid cols-2">
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Secret Storage only</h3><p>Jira token, GitLab token, and the chosen AI provider's key all live in VS Code Secret Storage — never in <code>settings.json</code> or source control.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI is opt-in, reviewed before send</h3><p>All four AI features are off by default. When enabled, they send the diff and ticket text to Anthropic or an internal OpenAI-compatible gateway — your choice, with a configurable base URL for routing through a company gateway.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Everything else works without AI</h3><p>If AI is disabled, branch creation, commits, MRs, and status transitions are unaffected.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>No telemetry</h3><p>Impact counts are stored locally only, in VS Code's own state store. Nothing is transmitted anywhere — including to us.</p></div>
+      </div>
+      <div class="cost-strip" style="background:rgba(42,120,214,0.06); border-color:rgba(42,120,214,0.20);">This is the main area for a policy decision before enabling AI features team-wide — see <b style="color:var(--series-1)">§10, The ask</b>.</div>
+    </div>
+  </section>
+
+  <!-- SLIDE 11: ROADMAP -->
+  <section class="slide" id="slide-11">
+    <div class="slide-body">
+      <div class="eyebrow">7 · Roadmap — what approval would fund</div>
+      <h2>Prioritized roughly by value-to-effort</h2>
+      <div class="roadmap-list">
+        <div class="rm-item"><div class="rm-rank">1</div><div><div class="title">Rollout &amp; distribution</div><div class="desc">Publish to an internal extension registry (or Open VSX / Marketplace) so the team gets it — and every future update — automatically.</div></div><div class="rm-tag high">Highest leverage</div></div>
+        <div class="rm-item"><div class="rm-rank">2</div><div><div class="title">AI commit-message suggestions</div><div class="desc">Plus streaming output and prompt caching for faster, cheaper AI responses.</div></div><div class="rm-tag">Depends on §6</div></div>
+        <div class="rm-item"><div class="rm-rank">3</div><div><div class="title">Configurability &amp; UX polish</div><div class="desc">Live-preview settings form for name templates, a Getting Started walkthrough.</div></div><div class="rm-tag">—</div></div>
+        <div class="rm-item"><div class="rm-rank">4</div><div><div class="title">Richer MRs</div><div class="desc">Reviewers, labels, draft/WIP toggle, auto-close-on-merge linking.</div></div><div class="rm-tag">—</div></div>
+        <div class="rm-item"><div class="rm-rank">5</div><div><div class="title">GitHub / pull-request support</div><div class="desc">Removes the GitLab-only ceiling for mixed-repo teams.</div></div><div class="rm-tag">—</div></div>
+        <div class="rm-item"><div class="rm-rank">6</div><div><div class="title">Post-work Jira comment sync</div><div class="desc">Auto-note the MR link on the ticket.</div></div><div class="rm-tag">—</div></div>
+        <div class="rm-item"><div class="rm-rank">7</div><div><div class="title">Ambient staleness nudges</div><div class="desc">Flag a ticket with a branch but no recent commits, or a stalled MR, in the sidebar.</div></div><div class="rm-tag">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 12: EFFORT & RISK -->
+  <section class="slide" id="slide-12">
+    <div class="slide-body">
+      <div class="eyebrow">8–9 · Effort, cost &amp; risk</div>
+      <h2>Low ongoing burden, well-understood risks</h2>
+      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Rollout (roadmap #1) is small — days, mostly packaging, docs, and registry setup. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 491 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
+      <div class="risk-row">
+        <div class="risk-label"><span class="risk-icon good"></span>Third-party API changes</div>
+        <p>Jira/GitLab are already supported with graceful fallbacks (Cloud vs Server, sprint-unsupported); changes are typically small, contained fixes.</p>
+      </div>
+      <div class="risk-row">
+        <div class="risk-label"><span class="risk-icon good"></span>Sending code to external AI</div>
+        <p>Off by default, opt-in, configurable gateway/endpoint; can remain disabled entirely.</p>
+      </div>
+      <div class="risk-row">
+        <div class="risk-label"><span class="risk-icon warning"></span>Adoption / "another tool"</div>
+        <p>Lives in the existing editor with a visible sidebar; a two-week pilot with one squad validates before wider rollout.</p>
+      </div>
+      <div class="risk-row">
+        <div class="risk-label"><span class="risk-icon good"></span>Key management</div>
+        <p>Secret Storage only; no secrets in files or repos.</p>
+      </div>
+      <div class="risk-row">
+        <div class="risk-label"><span class="risk-icon good"></span>Bus factor / maintenance</div>
+        <p>491 tests, CI-backed, documented codebase; low ongoing burden.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 13: THE ASK -->
+  <section class="slide" id="slide-13">
+    <div class="slide-body">
+      <div class="eyebrow">10 · The ask</div>
+      <h2>What I'm requesting approval for</h2>
+      <div class="ask-list">
+        <div class="ask-item"><div class="ask-check">1</div><div><h4>Pilot Loopline with one squad for two weeks</h4><p>Capture real Impact-row numbers instead of estimates.</p></div></div>
+        <div class="ask-item"><div class="ask-check">2</div><div><h4>Roll out via the internal extension registry</h4><p>If the pilot is positive — automatic delivery of every future update.</p></div></div>
+        <div class="ask-item"><div class="ask-check">3</div><div><h4>Prioritize and fund the §7 roadmap</h4><p>Starting with rollout, then AI commit messages and UX polish.</p></div></div>
+        <div class="ask-item"><div class="ask-check">4</div><div><h4>Decide on the AI routing policy</h4><p>Whether AI features may be enabled and, if so, whether they route through the public Anthropic API or an internal gateway.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 14: APPENDIX -->
+  <section class="slide" id="slide-14">
+    <div class="slide-body">
+      <div class="eyebrow">Appendix</div>
+      <h2>Commands &amp; key settings</h2>
+      <p style="font-size:13.5px; margin-bottom:6px;"><b style="color:var(--text-primary)">Commands:</b> Create Branch from Jira Ticket · Commit, Push &amp; Create MR · Ticket Actions · Run Setup Wizard · Set Jira Credentials · Set GitLab Token · Set AI (Anthropic) API Key · Set AI (OpenAI Gateway) API Key · Show Logs · Diagnose Connection · Refresh Tickets · Show Impact · Generate Standup Summary · Create Project Config File</p>
+      <p style="font-size:13.5px;"><b style="color:var(--text-primary)">Key settings:</b> Jira type (Cloud/Server) · branch/commit prefix mappings + name templates · protected branches · ticket scope (active sprint / all open) · base branch + update-before-branch behavior · Jira status transitions · AI enable + provider + model + base URL · AI acceptance-criteria check · changelog auto-draft + category mapping · show-ticket-details-on-branch · sidebar status grouping + colorful icons · proxy / corporate CA · Impact time-per-action estimates</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav-controls">
+  <button class="nav-btn" id="prevBtn" title="Previous (←)">‹</button>
+  <span class="nav-count"><span id="curIdx">1</span> / <span id="totalIdx">15</span></span>
+  <button class="nav-btn" id="nextBtn" title="Next (→)">›</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let idx = 0;
+  const total = slides.length;
+  document.getElementById('totalIdx').textContent = total;
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    document.getElementById('curIdx').textContent = idx + 1;
+    document.getElementById('progressFill').style.width = ((idx + 1) / total * 100) + '%';
+  }
+  function go(delta) {
+    idx = Math.min(total - 1, Math.max(0, idx + delta));
+    render();
+  }
+  document.getElementById('prevBtn').addEventListener('click', () => go(-1));
+  document.getElementById('nextBtn').addEventListener('click', () => go(1));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { go(1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    if (e.key === 'Home') { idx = 0; render(); }
+    if (e.key === 'End') { idx = total - 1; render(); }
+  });
+  let touchX = null;
+  window.addEventListener('touchstart', e => touchX = e.touches[0].clientX);
+  window.addEventListener('touchend', e => {
+    if (touchX === null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1);
+    touchX = null;
+  });
+  render();
+</script>
+
+</body>
+</html>
