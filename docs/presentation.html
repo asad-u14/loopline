@@ -237,6 +237,27 @@
   .risk-icon.serious { background: var(--serious); }
   .risk-row p { margin: 0; font-size: 14px; }
 
+  /* ---------- Architecture stack ---------- */
+  .arch-stack { display: flex; flex-direction: column; gap: 4px; }
+  .arch-layer {
+    background: var(--card); border: 1px solid var(--border);
+    border-left: 4px solid var(--series-1); border-radius: 12px;
+    padding: 14px 20px;
+  }
+  .arch-layer-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .arch-layer-head .name { font-weight: 700; font-size: 14.5px; color: var(--text-primary); }
+  .arch-layer-head .desc { font-size: 12.5px; color: var(--text-muted); }
+  .arch-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .arch-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 12px; font-size: 12.5px;
+    color: var(--text-secondary); font-weight: 500;
+  }
+  .arch-chip .dot { width: 7px; height: 7px; margin-right: 0; }
+  .arch-arrow { text-align: center; color: var(--text-muted); font-size: 15px; line-height: 1; margin: -1px 0; }
+  .arch-external .arch-chip { background: var(--surface-1); }
+
   /* ---------- Ask list ---------- */
   .ask-list { display: flex; flex-direction: column; gap: 14px; }
   .ask-item { display: flex; gap: 16px; align-items: flex-start; }
@@ -366,6 +387,69 @@
         <div class="step"><div class="num">2</div><div><h4>Commit, Push &amp; Create MR</h4><p>Loopline reads the ticket key back out of the branch name, builds a conventional commit (<code>feat: LPB-1234 …</code>), pushes with upstream tracking, opens a GitLab MR with an auto-generated description, and can move the ticket to In Review.</p></div></div>
       </div>
       <p style="margin-top:18px; font-size:14.5px;">Everything conventional is enforced by default and configurable per team — including, since v0.21.0, via a single committed <code>.loopline.json</code>.</p>
+    </div>
+  </section>
+
+  <!-- SLIDE 4B: ARCHITECTURE -->
+  <section class="slide" id="slide-arch">
+    <div class="slide-body">
+      <div class="eyebrow">4 · What's built — architecture</div>
+      <h2>How the pieces fit together</h2>
+      <p style="font-size:14.5px; max-width:960px; margin-bottom:20px;">Everything runs locally, inside VS Code — there is no separate server. A click in the sidebar or command palette triggers one command; the command orchestrates whichever integrations it needs, then reflects the result straight back into the sidebar, status bar, or a themed panel.</p>
+      <div class="arch-stack">
+        <div class="arch-layer" style="border-left-color:var(--series-1)">
+          <div class="arch-layer-head"><span class="name">Editor surface</span><span class="desc">where you interact</span></div>
+          <div class="arch-chips">
+            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Sidebar ticket tree</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Status bar indicator</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>SCM view buttons</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Command palette</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Themed webview panels</span>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer" style="border-left-color:var(--series-2)">
+          <div class="arch-layer-head"><span class="name">Commands</span><span class="desc">one click, one job each</span></div>
+          <div class="arch-chips">
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Create Branch</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Commit, Push &amp; Create MR</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Ticket Actions</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Standup Summary</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Diagnose Connection</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Setup Wizard</span>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer" style="border-left-color:var(--series-5)">
+          <div class="arch-layer-head"><span class="name">Integrations</span><span class="desc">talk to your existing tools</span></div>
+          <div class="arch-chips">
+            <span class="arch-chip"><span class="dot" style="background:var(--series-1)"></span>Git (local repo)</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>Jira Cloud / Server</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-2)"></span>GitLab</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-5)"></span>AI — Anthropic or OpenAI-compatible gateway</span>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer" style="border-left-color:var(--series-7)">
+          <div class="arch-layer-head"><span class="name">Foundations</span><span class="desc">shared, cross-cutting plumbing</span></div>
+          <div class="arch-chips">
+            <span class="arch-chip"><span class="dot" style="background:var(--series-7)"></span>Config + VS Code Secret Storage</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-6)"></span>Proxy / corporate-CA-aware HTTP client</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--series-4)"></span>Local impact tracking</span>
+            <span class="arch-chip"><span class="dot" style="background:var(--text-muted)"></span>Logging &amp; diagnostics</span>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-layer arch-external" style="border-left-color:var(--text-muted)">
+          <div class="arch-layer-head"><span class="name">External systems</span><span class="desc">only reached when a command needs them</span></div>
+          <div class="arch-chips">
+            <span class="arch-chip">Your local Git repo</span>
+            <span class="arch-chip">Jira</span>
+            <span class="arch-chip">GitLab</span>
+            <span class="arch-chip">Anthropic API / internal AI gateway <i style="font-style:normal;color:var(--text-muted);">(opt-in only)</i></span>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
