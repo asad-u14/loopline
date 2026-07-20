@@ -2,6 +2,28 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.24.1] — 2026-07-20
+### Changed
+- The reporter/created-updated row's bottom margin was only 4px, which was the entire gap before the action buttons on tickets with no labels. Bumped to 10px so it doesn't feel cramped either way.
+
+## [0.24.0] — 2026-07-20
+### Added
+- **Jira-style polish for the ticket detail panel.** The status chip is now color-coded by Jira's status category (green/blue/gray for Done/In Progress/To Do); type and priority chips get small inline SVG icons colored the same way as the sidebar tree (`iconForType`/`colorForType`), replacing the emoji; assignee and reporter get avatar-style initials circles; a copy-to-clipboard button sits next to the ticket key, with an in-panel checkmark confirmation; and a due date (`Due in Nd` / `Overdue by Nd`) plus a parent/epic breadcrumb are now shown, both sourced from standard Jira fields (`duedate`, `parent`).
+- **The panel opens instantly instead of sitting blank while the ticket loads.** It now renders immediately with what the sidebar already knows and a skeleton placeholder for the rest (description, assignee, priority, labels, dates), then re-renders once the full ticket arrives (or falls back cleanly on error/cancel).
+- Sprint was intentionally left out of this pass — it's a custom field whose ID varies per Jira instance/project type (Scrum vs Kanban, team-managed vs company-managed), so there's no reliable standard field to read it from.
+
+## [0.23.2] — 2026-07-20
+### Changed
+- **Reported-by and created/updated now share a row** — reporter flush left, dates flush right, wrapping to stack on narrow panels instead of each sitting on its own misaligned line. Labels moved to their own line below.
+
+## [0.23.1] — 2026-07-20
+### Added
+- **Jira-style metadata on the ticket detail panel.** Assignee, reporter, priority, labels, and created/updated dates are now shown as chips and a metadata row — all pulled from the existing single-issue Jira fetch, so no extra API call or added latency.
+
+## [0.23.0] — 2026-07-17
+### Added
+- **OpenAI-compatible gateway as an alternate AI provider.** Loopline's AI features (MR descriptions, implementation plans, diff-vs-ticket checks, standup summaries) can now run against an internal OpenAI-compatible gateway (e.g. Bedrock behind a corporate proxy) instead of Anthropic directly, selected via `loopline.ai.provider`. Both providers implement a shared `AiService` interface; proxy/CA/insecure-TLS support extends to the OpenAI SDK's fetch transport via an undici dispatcher.
+
 ## [0.22.0] — 2026-07-17
 ### Added
 - **Auto-drafted changelog entries (opt-in).** With `loopline.changelog.enabled` on, creating an MR also drafts a bullet under a `## Unreleased` section in the project's `CHANGELOG.md` (created if missing) — no AI, just the ticket key and the commit summary you already typed. Which subsection it lands in (`Added`/`Changed`/`Fixed`) comes from the branch prefix via `loopline.changelog.categoryMapping`. The entry is committed and pushed as a follow-up commit on the same branch, so it lands on the MR rather than sitting as a local uncommitted diff. Never creates a CHANGELOG.md that doesn't already exist, and never touches the file when disabled (the default). Both settings are also recognized in `.loopline.json` for team-wide sharing.
