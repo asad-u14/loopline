@@ -2,7 +2,11 @@ import * as vscode from "vscode";
 import { runSetupWizard } from "./setup/wizard";
 import { createBranchCommand } from "./commands/createBranch";
 import { commitAndPushCommand } from "./commands/commitAndPush";
-import { ticketActionsCommand, checkoutTicketBranchCommand } from "./commands/ticketActions";
+import {
+  ticketActionsCommand,
+  checkoutTicketBranchCommand,
+  switchToMainBranchCommand,
+} from "./commands/ticketActions";
 import { diagnoseConnectionCommand } from "./commands/diagnose";
 import { TicketStatusBar } from "./ui/statusBar";
 import { TicketsTreeProvider, keyFromArg } from "./ui/ticketsTree";
@@ -119,6 +123,14 @@ export function activate(context: vscode.ExtensionContext) {
         await openTicketDetailsCommand(context, ticketFromArg(arg));
       } catch (err) {
         logError("tickets.openDetails failed", err);
+        vscode.window.showErrorMessage(`Loopline: ${(err as Error)?.message ?? String(err)}`);
+      }
+    }),
+    vscode.commands.registerCommand("loopline.tickets.switchToMain", async () => {
+      try {
+        await switchToMainBranchCommand(context);
+      } catch (err) {
+        logError("tickets.switchToMain failed", err);
         vscode.window.showErrorMessage(`Loopline: ${(err as Error)?.message ?? String(err)}`);
       }
     }),

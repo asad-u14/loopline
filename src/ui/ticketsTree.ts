@@ -31,6 +31,15 @@ type Node =
   | { t: "message"; label: string; icon?: string; command?: vscode.Command }
   | { t: "impact" };
 
+interface CurrentInfo {
+  repoRoot?: string;
+  branch: string;
+  /** False when the working tree has uncommitted changes. */
+  clean: boolean;
+  /** "main" or "master", whichever exists locally; undefined if neither does. */
+  mainTarget?: string;
+}
+
 export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
   private readonly _onDidChange = new vscode.EventEmitter<Node | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChange.event;
@@ -45,6 +54,8 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
   private ticketBranches: Record<string, string[]> = {};
   private headWatcher?: vscode.FileSystemWatcher;
   private watchedRepo?: string;
+  /** Memoized per-render so the "Current" header and its child don't each fetch git status. */
+  private currentInfoPromise?: Promise<CurrentInfo>;
 
   constructor(private ctx: vscode.ExtensionContext) {
     ctx.subscriptions.push(
@@ -64,6 +75,7 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
     this.loadedScope = undefined;
     this.sprintFilterApplied = true;
     this.ticketBranches = {};
+    this.currentInfoPromise = undefined;
     this._onDidChange.fire();
   }
 
@@ -73,7 +85,45 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
 
   /** Light refresh — re-render (e.g. branch changed) without re-fetching tickets. */
   touch(): void {
+    this.currentInfoPromise = undefined;
     this._onDidChange.fire();
+  }
+
+  /** Current branch, dirty status, and main/master target — fetched once per render. */
+  private getCurrentInfo(): Promise<CurrentInfo> {
+    if (!this.currentInfoPromise) {
+      this.currentInfoPromise = this.loadCurrentInfo();
+    }
+    return this.currentInfoPromise;
+  }
+
+  private async loadCurrentInfo(): Promise<CurrentInfo> {
+    const repoRoot = await currentRepoQuiet(this.ctx);
+    if (!repoRoot) {
+      return { branch: "", clean: true };
+    }
+    this.ensureHeadWatcher(repoRoot);
+    const git = new GitService(repoRoot);
+    let branch = "";
+    let clean = true;
+    let mainTarget: string | undefined;
+    try {
+      branch = await git.currentBranch();
+    } catch {
+      /* ignore */
+    }
+    try {
+      clean = !(await git.hasUncommittedChanges());
+    } catch {
+      /* ignore */
+    }
+    try {
+      const branches = await git.listLocalBranches();
+      mainTarget = branches.includes("main") ? "main" : branches.includes("master") ? "master" : undefined;
+    } catch {
+      /* ignore */
+    }
+    return { repoRoot, branch, clean, mainTarget };
   }
 
   /**
@@ -98,11 +148,19 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
     this.ctx.subscriptions.push(watcher);
   }
 
-  getTreeItem(node: Node): vscode.TreeItem {
+  async getTreeItem(node: Node): Promise<vscode.TreeItem> {
     switch (node.t) {
       case "section": {
         const item = new vscode.TreeItem(node.label, vscode.TreeItemCollapsibleState.Expanded);
         item.contextValue = `section:${node.id}`;
+        if (node.id === "current") {
+          // Offer the "back to main" inline action only when there's somewhere
+          // else clean to switch to — otherwise it'd be a dead or lossy button.
+          const info = await this.getCurrentInfo();
+          if (info.branch && info.mainTarget && info.branch !== info.mainTarget && info.clean) {
+            item.contextValue = "section:current:offMain";
+          }
+        }
         return item;
       }
       case "current": {
@@ -246,19 +304,12 @@ export class TicketsTreeProvider implements vscode.TreeDataProvider<Node> {
     }
 
     if (element.t === "section" && element.id === "current") {
-      const repoRoot = await currentRepoQuiet(this.ctx);
-      if (!repoRoot) {
+      const info = await this.getCurrentInfo();
+      if (!info.repoRoot) {
         return [{ t: "message", label: "No git repository open", icon: "info" }];
       }
-      this.ensureHeadWatcher(repoRoot);
-      let branch = "";
-      try {
-        branch = await new GitService(repoRoot).currentBranch();
-      } catch {
-        /* ignore */
-      }
-      const ticket = branch ? parseBranchName(branch)?.ticket : undefined;
-      return [{ t: "current", ticket, branch }];
+      const ticket = info.branch ? parseBranchName(info.branch)?.ticket : undefined;
+      return [{ t: "current", ticket, branch: info.branch }];
     }
 
     if (element.t === "section" && element.id === "sprint") {

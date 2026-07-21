@@ -158,3 +158,33 @@ export async function checkoutTicketBranchCommand(
     vscode.window.showErrorMessage(`Loopline: ${(err as Error).message}`);
   }
 }
+
+/**
+ * Quick-switch from the "Current" section's inline button back to main/master.
+ * The button only renders when the tree is clean, but state can change between
+ * render and click, so re-check here rather than trusting the tree item.
+ */
+export async function switchToMainBranchCommand(ctx: vscode.ExtensionContext): Promise<void> {
+  const repoRoot = await resolveRepoRoot(ctx);
+  if (!repoRoot) {
+    return;
+  }
+  const git = new GitService(repoRoot);
+  const current = await git.currentBranch();
+  const branches = await git.listLocalBranches();
+  const target = branches.includes("main") ? "main" : branches.includes("master") ? "master" : undefined;
+  if (!target || target === current) {
+    return;
+  }
+  if (await git.hasUncommittedChanges()) {
+    vscode.window.showWarningMessage("Loopline: commit or stash your changes before switching branches.");
+    return;
+  }
+  try {
+    await git.checkout(target);
+    vscode.window.showInformationMessage(`Loopline: switched to ${target}`);
+    await vscode.commands.executeCommand("loopline.refreshTicketStatus");
+  } catch (err) {
+    vscode.window.showErrorMessage(`Loopline: ${(err as Error).message}`);
+  }
+}
