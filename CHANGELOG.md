@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.24.5] — 2026-07-22
+### Fixed
+- **The ticket panel opened after branch creation didn't match "Open Ticket in VS Code."** It had its own separate call into the ticket-detail panel that only ever fetched summary/description/status, so it never picked up the Jira-style redesign (status color, icons, avatars, labels, dates, due date, parent breadcrumb) or the instant-open-with-skeleton behavior added in 0.23.1–0.24.1 — both entry points now build the panel from the same full set of fields.
+
 ## [0.24.4] — 2026-07-22
 ### Added
 - **Per-repo extra git flags for commit/push.** `loopline.git.commitExtraArgs` and `loopline.git.pushExtraArgs` let a repo's workspace settings (`.vscode/settings.json`) pass extra flags — e.g. `--no-verify` for a repo whose hook needs bypassing — to every `git commit` / `git push` Loopline runs, including the changelog follow-up commit. Empty by default; set in workspace settings (not global) so it only applies to that repo.

@@ -202,10 +202,31 @@ async function showTicketDetailsAndOfferPlan(
   _repoRoot: string,
   cfg: LooplineConfig
 ): Promise<void> {
-  // Fetch the full ticket (for the description + status). Non-fatal.
+  // Single, themed webview — the "Generate suggestions" button lives inside it.
+  // Open immediately with what's already known, showing a skeleton for the
+  // rest, rather than leaving it blank while the full ticket loads.
+  showTicketDetail(ctx, {
+    key: chosen.key,
+    summary: chosen.summary,
+    issueType: chosen.issueType,
+    description: "",
+    jiraBaseUrl: cfg.jiraBaseUrl,
+    loading: true,
+  });
+
+  // Fetch the full ticket (for the description, status, and Jira-style metadata). Non-fatal.
   let summary = chosen.summary;
   let description = "";
   let status = "";
+  let statusCategory: string | undefined;
+  let assignee: string | undefined;
+  let reporter: string | undefined;
+  let priority: string | undefined;
+  let labels: string[] = [];
+  let created: string | undefined;
+  let updated: string | undefined;
+  let dueDate: string | undefined;
+  let parent: { key: string; summary: string } | undefined;
   try {
     const issue = await withCancellableProgress(`Loopline: loading ${chosen.key} details…`, (signal) =>
       jira.getIssue(chosen.key, signal)
@@ -213,21 +234,36 @@ async function showTicketDetailsAndOfferPlan(
     summary = issue.summary || summary;
     description = issue.description || "";
     status = issue.status || "";
-  } catch (err) {
-    if (isCancelled(err)) {
-      return;
-    }
-    // fall through with what we have
+    statusCategory = issue.statusCategory;
+    assignee = issue.assignee;
+    reporter = issue.reporter;
+    priority = issue.priority;
+    labels = issue.labels;
+    created = issue.created;
+    updated = issue.updated;
+    dueDate = issue.dueDate;
+    parent = issue.parent;
+  } catch {
+    // fall through with what we have — the panel is already open showing a
+    // skeleton, so it must still be re-rendered to clear it, cancelled or not.
   }
 
-  // Single, themed webview — the "Generate suggestions" button lives inside it.
   showTicketDetail(ctx, {
     key: chosen.key,
     summary,
     issueType: chosen.issueType,
     status,
+    statusCategory,
     description,
     jiraBaseUrl: cfg.jiraBaseUrl,
+    assignee,
+    reporter,
+    priority,
+    labels,
+    created,
+    updated,
+    dueDate,
+    parent,
   });
 }
 
