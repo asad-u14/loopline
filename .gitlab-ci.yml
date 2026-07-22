@@ -1,0 +1,23 @@
+image: node:20
+
+stages:
+  - publish
+
+publish-marketplace:
+  stage: publish
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - package.json
+  before_script:
+    - npm ci
+  script:
+    - CURRENT_VERSION=$(node -p "require('./package.json').version")
+    - PREVIOUS_VERSION=$(git show "$CI_COMMIT_BEFORE_SHA:package.json" 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version" 2>/dev/null || echo "")
+    - |
+      if [ "$CURRENT_VERSION" = "$PREVIOUS_VERSION" ]; then
+        echo "Version unchanged ($CURRENT_VERSION) — skipping publish."
+        exit 0
+      fi
+    - echo "Publishing version $CURRENT_VERSION"
+    - npx vsce publish -p "$VSCE_PAT"
