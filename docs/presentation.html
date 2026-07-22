@@ -326,15 +326,15 @@
     <div class="meta-row">
       <span>Prepared by <b>Asad</b></span>
       <span>Team <b>Engineering</b></span>
-      <span>Date <b>20 July 2026</b></span>
-      <span class="status-chip">Working prototype · v0.24.1</span>
+      <span>Date <b>22 July 2026</b></span>
+      <span class="status-chip">Working prototype · v0.24.4</span>
     </div>
   </section>
 
   <!-- SLIDE 1: WHAT'S NEW -->
   <section class="slide" id="slide-1">
     <div class="slide-body">
-      <div class="eyebrow">Since the last review · v0.19.1 → v0.24.1</div>
+      <div class="eyebrow">Since the last review · v0.19.1 → v0.24.4</div>
       <h2>What's changed</h2>
       <div class="card-grid cols-3">
         <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Jira-style ticket panel<span class="badge-new">New</span></h3>
@@ -344,19 +344,21 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3>
           <p>Creating an MR can now draft a bullet into the project's <code>CHANGELOG.md</code> under the right section automatically — no AI required.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3>
-          <p>Groups today's commits by ticket and drafts a "what I did" note — AI-rephrased if enabled, plain bullets if not — in a themed panel.</p></div>
+          <p>Groups today's commits — across every repo in your workspace — by repo then ticket, and drafts a "what I did" note — AI-rephrased if enabled, plain bullets if not — in a themed panel.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>OpenAI-compatible gateway<span class="badge-new">New</span></h3>
           <p>All AI features can now run against an internal OpenAI-compatible gateway (e.g. Bedrock behind a corporate proxy), not just Anthropic — one switch, same features.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-6)"></span>Sidebar reliability</h3>
-          <p>The "Current" ticket row now tracks external branch switches (e.g. terminal <code>git checkout</code>) instantly, not just on window focus.</p></div>
+          <p>The "Current" ticket row now tracks external branch switches (e.g. terminal <code>git checkout</code>) instantly, and offers a one-click button back to main/master whenever the tree is clean.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Test infrastructure unlocked</h3>
           <p>Jira, GitLab, and Anthropic service classes were previously untestable. A test-only <code>vscode</code> stub now makes them fully coverable.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Per-repo git flags<span class="badge-new">New</span></h3>
+          <p>A repo's workspace settings can now pass extra flags — e.g. <code>--no-verify</code> — to every commit and push Loopline runs, scoped to just that repo.</p></div>
       </div>
       <div class="stat-row cols-4" style="margin-top:26px;">
-        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">505</div><div class="delta new">↑ from 161</div></div>
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">510</div><div class="delta new">↑ from 161</div></div>
         <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta new">↑ from 14</div></div>
         <div class="stat-tile"><div class="label">Source files covered</div><div class="value accent-aqua">39</div><div class="delta new">↑ from 31</div></div>
-        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">34</div><div class="delta">v0.1.0 → v0.24.1</div></div>
+        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">37</div><div class="delta">v0.1.0 → v0.24.4</div></div>
       </div>
     </div>
   </section>
@@ -537,9 +539,9 @@
   <section class="slide" id="slide-5">
     <div class="slide-body">
       <div class="eyebrow">4 · What's built — core workflow &amp; sidebar</div>
-      <h2>Prototype v0.24.1</h2>
+      <h2>Prototype v0.24.4</h2>
       <div class="card-grid cols-3">
-        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Loopline sidebar</h3><p>Dedicated activity-bar panel: current branch/ticket, active-sprint tickets grouped by status (In Progress expanded by default), color-coded icons by issue type. Click to branch, or open in Jira.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Loopline sidebar</h3><p>Dedicated activity-bar panel: current branch/ticket, active-sprint tickets grouped by status (In Progress expanded by default), color-coded icons by issue type. Click to branch, open in Jira, or jump back to main/master in one click when the tree is clean.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Branch creation</h3><p>Issue-type→prefix mapping, confirm/edit, existing-branch guard (check out / rename / cancel), optional fetch of a fresh base branch first.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Commit, push &amp; MR</h3><p>Duplicate-MR detection, automatic GitLab project detection from the git remote, staging that respects what you've already staged.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Single-commit mode</h3><p>Re-running commit on a branch with existing commits offers to squash into one and force-push safely with <code>--force-with-lease</code>.</p></div>
@@ -561,7 +563,7 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI-generated MR descriptions</h3><p>Drafts a Summary / Changes / Why / Testing body from the diff and ticket — reviewed and edited by you before it posts. Falls back to a deterministic file-list description if disabled.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI implementation suggestions</h3><p>After a branch is created, drafts a starting plan (goal, likely areas to change, edge cases, tests, open questions) grounded in the ticket and repo layout.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Acceptance-criteria coverage check</h3><p>Before the commit, asks whether the diff addresses what the ticket requires. Silent when complete; pauses with "Commit anyway / Cancel" otherwise. Fails open on any error.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3><p>Groups today's commits by ticket key and rephrases each into one grounded line — or a plain bulleted list with AI off. Opens in a themed, copy-to-clipboard panel.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3><p>Discovers every git repo in the workspace, groups today's commits by repo then ticket, and rephrases each into one grounded line — or a plain bulleted list with AI off. Opens in a themed, copy-to-clipboard panel.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Dual AI provider<span class="badge-new">New</span></h3><p>Anthropic Messages API, or an OpenAI-compatible internal gateway (e.g. Bedrock behind a corporate proxy) — one setting, same feature set, same review-before-send model.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3><p>No AI involved: creating an MR can draft a bullet into <code>CHANGELOG.md</code> from the ticket key and commit summary, filed under the right section by branch prefix.</p></div>
       </div>
@@ -580,6 +582,7 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Branch/commit templates<span class="badge-new">New</span></h3><p>Token-based templates reshape generated names per team, defaulting to today's exact format so nothing changes unless edited.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>.loopline.json<span class="badge-new">New</span></h3><p>One committed config file standardizes conventions for the whole team on clone — read-only unless scaffolded explicitly, never secrets.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Guided setup wizard</h3><p>Live credential validation for Jira, GitLab, and the chosen AI provider. All secrets in VS Code Secret Storage — never in settings files.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Per-repo git flags<span class="badge-new">New</span></h3><p><code>loopline.git.commitExtraArgs</code> / <code>pushExtraArgs</code> pass extra flags (e.g. <code>--no-verify</code>) to every commit/push, set in a repo's own workspace settings so it never leaks to other repos.</p></div>
       </div>
     </div>
   </section>
@@ -590,7 +593,7 @@
       <div class="eyebrow">4 · Engineering quality</div>
       <h2>Tested, CI-backed, and growing steadily</h2>
       <div class="stat-row cols-4">
-        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">505</div><div class="delta">passing</div></div>
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">510</div><div class="delta">passing</div></div>
         <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta">unit + integration</div></div>
         <div class="stat-tile"><div class="label">Source files</div><div class="value accent-aqua">39</div><div class="delta">under coverage</div></div>
         <div class="stat-tile"><div class="label">CI pipeline stages</div><div class="value accent-violet">4</div><div class="delta">type-check → test → bundle → package</div></div>
@@ -657,7 +660,7 @@
     <div class="slide-body">
       <div class="eyebrow">8–9 · Effort, cost &amp; risk</div>
       <h2>Low ongoing burden, well-understood risks</h2>
-      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Rollout (roadmap #1) is small — days, mostly packaging, docs, and registry setup. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 505 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
+      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Rollout (roadmap #1) is small — days, mostly packaging, docs, and registry setup. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 510 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Third-party API changes</div>
         <p>Jira/GitLab are already supported with graceful fallbacks (Cloud vs Server, sprint-unsupported); changes are typically small, contained fixes.</p>
@@ -676,7 +679,7 @@
       </div>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Bus factor / maintenance</div>
-        <p>505 tests, CI-backed, documented codebase; low ongoing burden.</p>
+        <p>510 tests, CI-backed, documented codebase; low ongoing burden.</p>
       </div>
     </div>
   </section>
@@ -701,7 +704,7 @@
       <div class="eyebrow">Appendix</div>
       <h2>Commands &amp; key settings</h2>
       <p style="font-size:13.5px; margin-bottom:6px;"><b style="color:var(--text-primary)">Commands:</b> Create Branch from Jira Ticket · Commit, Push &amp; Create MR · Ticket Actions · Run Setup Wizard · Set Jira Credentials · Set GitLab Token · Set AI (Anthropic) API Key · Set AI (OpenAI Gateway) API Key · Show Logs · Diagnose Connection · Refresh Tickets · Show Impact · Generate Standup Summary · Create Project Config File</p>
-      <p style="font-size:13.5px;"><b style="color:var(--text-primary)">Key settings:</b> Jira type (Cloud/Server) · branch/commit prefix mappings + name templates · protected branches · ticket scope (active sprint / all open) · base branch + update-before-branch behavior · Jira status transitions · AI enable + provider + model + base URL · AI acceptance-criteria check · changelog auto-draft + category mapping · show-ticket-details-on-branch · sidebar status grouping + colorful icons · proxy / corporate CA · Impact time-per-action estimates</p>
+      <p style="font-size:13.5px;"><b style="color:var(--text-primary)">Key settings:</b> Jira type (Cloud/Server) · branch/commit prefix mappings + name templates · protected branches · ticket scope (active sprint / all open) · base branch + update-before-branch behavior · Jira status transitions · AI enable + provider + model + base URL · AI acceptance-criteria check · changelog auto-draft + category mapping · show-ticket-details-on-branch · sidebar status grouping + colorful icons · proxy / corporate CA · git commit/push extra args (per-repo) · Impact time-per-action estimates</p>
     </div>
   </section>
 

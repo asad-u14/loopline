@@ -2,6 +2,18 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.24.4] — 2026-07-22
+### Added
+- **Per-repo extra git flags for commit/push.** `loopline.git.commitExtraArgs` and `loopline.git.pushExtraArgs` let a repo's workspace settings (`.vscode/settings.json`) pass extra flags — e.g. `--no-verify` for a repo whose hook needs bypassing — to every `git commit` / `git push` Loopline runs, including the changelog follow-up commit. Empty by default; set in workspace settings (not global) so it only applies to that repo.
+
+## [0.24.3] — 2026-07-21
+### Added
+- **Inline "switch to main" button.** When the checked-out branch isn't main/master and the working tree is clean, an arrow-swap button appears next to "Current" in the Tickets view to jump straight back — hidden whenever there are uncommitted changes or no main/master branch exists, so it never offers a lossy switch.
+
+## [0.24.2] — 2026-07-20
+### Changed
+- **Standup summary now aggregates across every repo in the workspace**, not just one resolved repo. It discovers every git repo under the workspace folders, pulls today's commits from each, and groups the summary by repo (then by ticket within it), in both the AI prompt and the deterministic fallback.
+
 ## [0.24.1] — 2026-07-20
 ### Changed
 - The reporter/created-updated row's bottom margin was only 4px, which was the entire gap before the action buttons on tickets with no labels. Bumped to 10px so it doesn't feel cramped either way.
