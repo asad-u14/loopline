@@ -20,4 +20,5 @@ publish-marketplace:
         exit 0
       fi
     - echo "Publishing version $CURRENT_VERSION"
+    - echo "VSCE_PAT length is ${#VSCE_PAT}"
     - npx vsce publish -p "$VSCE_PAT"
