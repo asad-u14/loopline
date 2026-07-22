@@ -258,14 +258,15 @@ export class GitService {
     await this.git.add(["-A"]);
   }
 
-  async commit(message: string): Promise<void> {
-    await this.git.commit(message);
+  /** `extraArgs` are appended as-is (e.g. `["--no-verify"]` for a repo whose hook needs bypassing). */
+  async commit(message: string, extraArgs: string[] = []): Promise<void> {
+    await this.git.commit(message, extraArgs);
   }
 
   /** Push current branch to origin, setting upstream tracking on first push. */
-  async pushSetUpstream(branch: string): Promise<void> {
+  async pushSetUpstream(branch: string, extraArgs: string[] = []): Promise<void> {
     try {
-      await this.git.push(["-u", "origin", branch]);
+      await this.git.push(["-u", "origin", branch, ...extraArgs]);
     } catch (err) {
       throw new GitError(`Push failed: ${(err as Error).message}`);
     }
@@ -275,9 +276,9 @@ export class GitService {
    * Push a rewritten branch. Uses --force-with-lease, which refuses to clobber
    * commits pushed by someone else since our last fetch.
    */
-  async pushForceWithLease(branch: string): Promise<void> {
+  async pushForceWithLease(branch: string, extraArgs: string[] = []): Promise<void> {
     try {
-      await this.git.push(["--force-with-lease", "-u", "origin", branch]);
+      await this.git.push(["--force-with-lease", "-u", "origin", branch, ...extraArgs]);
     } catch (err) {
       throw new GitError(
         `Force-push failed (nothing was lost): ${(err as Error).message}. ` +

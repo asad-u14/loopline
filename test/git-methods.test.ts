@@ -279,6 +279,22 @@ test("stageAll + commit: stages everything including untracked and commits", asy
   assert.equal(log, "chore: stage all");
 });
 
+test("commit: extraArgs are passed through to git (e.g. --no-verify bypasses a failing hook)", async () => {
+  const hooksDir = path.join(repo, ".git", "hooks");
+  fs.writeFileSync(path.join(hooksDir, "pre-commit"), "#!/bin/sh\necho blocked >&2\nexit 1\n", {
+    mode: 0o755,
+  });
+
+  fs.writeFileSync(path.join(repo, "app.js"), "changed\n");
+  await git.stageAll();
+
+  await assert.rejects(() => git.commit("chore: blocked"));
+  await git.commit("chore: bypassed", ["--no-verify"]);
+
+  const log = execSync("git log --format=%s -1", { cwd: repo }).toString().trim();
+  assert.equal(log, "chore: bypassed");
+});
+
 // ---- push: pushSetUpstream / pushForceWithLease -------------------------------
 
 test("pushSetUpstream: pushes and sets tracking branch", async () => {
@@ -286,6 +302,21 @@ test("pushSetUpstream: pushes and sets tracking branch", async () => {
   run(`git init -q --bare "${bare}"`);
   run(`git remote add origin "${bare}"`);
   await git.pushSetUpstream("main");
+  assert.equal(await git.hasUpstream("main"), true);
+});
+
+test("pushSetUpstream: extraArgs are passed through to git (e.g. --no-verify bypasses a failing pre-push hook)", async () => {
+  const bare = mkTmpDir("loopline-bare-");
+  run(`git init -q --bare "${bare}"`);
+  run(`git remote add origin "${bare}"`);
+
+  const hooksDir = path.join(repo, ".git", "hooks");
+  fs.writeFileSync(path.join(hooksDir, "pre-push"), "#!/bin/sh\necho blocked >&2\nexit 1\n", {
+    mode: 0o755,
+  });
+
+  await assert.rejects(() => git.pushSetUpstream("main"));
+  await git.pushSetUpstream("main", ["--no-verify"]);
   assert.equal(await git.hasUpstream("main"), true);
 });
 

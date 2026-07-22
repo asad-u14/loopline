@@ -47,6 +47,8 @@ export interface LooplineConfig {
   commitMessageTemplate: string;
   changelogEnabled: boolean;
   changelogCategoryMapping: Record<string, string>;
+  gitCommitExtraArgs: string[];
+  gitPushExtraArgs: string[];
 }
 
 const SECRET_JIRA_TOKEN = "loopline.jira.token";
@@ -101,6 +103,8 @@ export function readConfig(): LooplineConfig {
     changelogEnabled: c.get<boolean>("changelog.enabled") ?? false,
     changelogCategoryMapping:
       c.get<Record<string, string>>("changelog.categoryMapping") || DEFAULT_CHANGELOG_CATEGORY_MAPPING,
+    gitCommitExtraArgs: c.get<string[]>("git.commitExtraArgs") ?? [],
+    gitPushExtraArgs: c.get<string[]>("git.pushExtraArgs") ?? [],
   };
 }
 

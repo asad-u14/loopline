@@ -89,6 +89,8 @@ test("readConfig: every default when nothing is configured", () => {
     commitMessageTemplate: DEFAULT_COMMIT_TEMPLATE,
     changelogEnabled: false,
     changelogCategoryMapping: DEFAULT_CHANGELOG_CATEGORY_MAPPING,
+    gitCommitExtraArgs: [],
+    gitPushExtraArgs: [],
   });
 });
 
@@ -131,6 +133,8 @@ test("readConfig: every explicit override wins, with trimming/slash-stripping ap
     commitMessageTemplate: "{ticket}: {summary}",
     "changelog.enabled": true,
     "changelog.categoryMapping": { feature: "Added" },
+    "git.commitExtraArgs": ["--no-verify"],
+    "git.pushExtraArgs": ["--no-verify"],
   });
 
   const cfg = readConfig();
@@ -172,6 +176,8 @@ test("readConfig: every explicit override wins, with trimming/slash-stripping ap
     commitMessageTemplate: "{ticket}: {summary}",
     changelogEnabled: true,
     changelogCategoryMapping: { feature: "Added" },
+    gitCommitExtraArgs: ["--no-verify"],
+    gitPushExtraArgs: ["--no-verify"],
   });
 });
 

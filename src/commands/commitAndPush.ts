@@ -230,13 +230,13 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
       { location: vscode.ProgressLocation.Notification, title: "Loopline: commit & push…", cancellable: false },
       async (progress) => {
         progress.report({ message: "committing" });
-        await git.commit(message);
+        await git.commit(message, cfg.gitCommitExtraArgs);
 
         progress.report({ message: "pushing" });
         if (squash.needsForce) {
-          await git.pushForceWithLease(branch);
+          await git.pushForceWithLease(branch, cfg.gitPushExtraArgs);
         } else {
-          await git.pushSetUpstream(branch);
+          await git.pushSetUpstream(branch, cfg.gitPushExtraArgs);
         }
       }
     );
@@ -340,6 +340,8 @@ export async function commitAndPushCommand(ctx: vscode.ExtensionContext): Promis
         branchPrefix,
         jiraBaseUrl: cfg.jiraBaseUrl,
         categoryMapping: cfg.changelogCategoryMapping,
+        commitExtraArgs: cfg.gitCommitExtraArgs,
+        pushExtraArgs: cfg.gitPushExtraArgs,
       });
     }
 
@@ -410,6 +412,8 @@ interface ChangelogUpdateInput {
   branchPrefix: string;
   jiraBaseUrl: string;
   categoryMapping: Record<string, string>;
+  commitExtraArgs: string[];
+  pushExtraArgs: string[];
 }
 
 /**
@@ -437,8 +441,8 @@ async function maybeUpdateChangelog(
     fs.writeFileSync(filePath, insertChangelogEntry(current, category, line), "utf8");
 
     await git.stageFiles(["CHANGELOG.md"]);
-    await git.commit(`docs: changelog entry for ${input.ticketKey}`);
-    await git.pushSetUpstream(branch);
+    await git.commit(`docs: changelog entry for ${input.ticketKey}`, input.commitExtraArgs);
+    await git.pushSetUpstream(branch, input.pushExtraArgs);
     log(`changelog: added a ${category} entry for ${input.ticketKey} and pushed it`);
   } catch (err) {
     logError("changelog update failed", err);

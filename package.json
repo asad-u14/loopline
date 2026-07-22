@@ -495,6 +495,22 @@
           "default": "squash",
           "markdownDescription": "Keep the merge request to **one commit**. With `squash`, re-running the commit command on a branch that already has commits offers to collapse them into a single commit and force-push with `--force-with-lease` (which fails safely if someone else pushed). The first commit on a branch never needs squashing."
         },
+        "loopline.git.commitExtraArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Extra flags appended to every `git commit` Loopline runs (e.g. `[\"--no-verify\"]` for a repo whose pre-commit hook needs bypassing). Set this in the repo's workspace settings (`.vscode/settings.json`), not your global user settings, so it only applies there."
+        },
+        "loopline.git.pushExtraArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Extra flags appended to every `git push` Loopline runs (e.g. `[\"--no-verify\"]`). Set this in the repo's workspace settings (`.vscode/settings.json`), not your global user settings, so it only applies there."
+        },
         "loopline.sidebar.groupByStatus": {
           "type": "boolean",
           "default": true,
