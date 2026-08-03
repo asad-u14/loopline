@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { readConfig } from "../util/config";
 import { buildAiService, currentRepoQuiet } from "../util/workspace";
 import { withCancellableProgress, isCancelled } from "../util/progress";
@@ -76,6 +77,10 @@ async function handleMessage(ctx: vscode.ExtensionContext, msg: any): Promise<vo
     case "copyKey":
       await vscode.env.clipboard.writeText(current.key);
       panel?.webview.postMessage({ type: "copied" });
+      return;
+    case "copyAiContext":
+      await vscode.env.clipboard.writeText(await buildAiContextMarkdown(ctx, current));
+      panel?.webview.postMessage({ type: "copiedAiContext" });
       return;
     case "createBranch":
       await vscode.commands.executeCommand("loopline.tickets.createBranch", current.key);
@@ -210,6 +215,137 @@ function statusCategoryClass(category: string | undefined): string {
     return "chip-status-new";
   }
   return "";
+}
+
+function parseSectionBullets(description: string, sectionPattern: RegExp): string[] {
+  if (!description.trim()) {
+    return [];
+  }
+  const lines = description.replace(/\r\n/g, "\n").split("\n");
+  let inSection = false;
+  const bullets: string[] = [];
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) {
+      if (inSection && bullets.length > 0) {
+        break;
+      }
+      continue;
+    }
+
+    const isHeading = /^#{1,6}\s+/.test(line) || /^[A-Za-z][A-Za-z0-9 /_-]{2,40}:$/.test(line);
+    if (sectionPattern.test(line.replace(/^#{1,6}\s+/, "").replace(/:$/, "").trim())) {
+      inSection = true;
+      continue;
+    }
+    if (!inSection) {
+      continue;
+    }
+    if (isHeading) {
+      break;
+    }
+
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/) ?? line.match(/^\d+[.)]\s+(.*)$/);
+    if (bulletMatch?.[1]) {
+      bullets.push(bulletMatch[1].trim());
+      continue;
+    }
+
+    // Accept plain lines in the section as fallback criteria/constraints entries.
+    bullets.push(line);
+  }
+
+  return bullets.filter(Boolean);
+}
+
+function buildOpenQuestions(detail: TicketDetail, description: string, acceptanceCriteria: string[]): string[] {
+  const questions: string[] = [];
+  if (!detail.summary?.trim()) {
+    questions.push("What business outcome should define success for this ticket?");
+  }
+  if (!description.trim()) {
+    questions.push("What behavior or user flow should be implemented or fixed?");
+    questions.push("What edge cases should be handled?");
+  }
+  if (acceptanceCriteria.length === 0) {
+    questions.push("What exact acceptance criteria define done?");
+  }
+  if (/bug|defect|incident/i.test(detail.issueType || "")) {
+    const hasReproHints = /steps to reproduce|expected|actual|repro/i.test(description);
+    if (!hasReproHints) {
+      questions.push("Can you provide reproduction steps and expected vs actual behavior?");
+    }
+  }
+  if (questions.length === 0) {
+    questions.push("Are there any hidden constraints (performance, security, compatibility) not listed above?");
+  }
+  return questions;
+}
+
+async function buildAiContextMarkdown(ctx: vscode.ExtensionContext, detail: TicketDetail): Promise<string> {
+  const summary = detail.summary?.trim() || "No summary provided.";
+  const description = detail.description?.trim() || "No description provided.";
+  const acceptanceCriteria = parseSectionBullets(description, /^(acceptance criteria|acceptance|ac)$/i);
+  const constraints = parseSectionBullets(description, /^(constraints?|non-goals?|out of scope)$/i);
+  const openQuestions = buildOpenQuestions(detail, detail.description || "", acceptanceCriteria);
+
+  const repoRoot = await currentRepoQuiet(ctx);
+  const layout = repoRoot ? topLevelEntries(repoRoot, 12) : [];
+  const activeUri = vscode.window.activeTextEditor?.document.uri;
+  const activePath = activeUri?.scheme === "file" ? activeUri.fsPath : undefined;
+  const activeRel = repoRoot && activePath ? path.relative(repoRoot, activePath) : undefined;
+
+  const lines: string[] = [
+    `# Jira Ticket ${detail.key}: ${summary}`,
+    "",
+    "## Goal",
+    summary,
+    "",
+    "## Acceptance Criteria",
+    ...(acceptanceCriteria.length > 0
+      ? acceptanceCriteria.map((v) => `- ${v}`)
+      : ["- Not provided in Jira ticket."]),
+    "",
+    "## Metadata",
+    `- Key: ${detail.key}`,
+    `- Type: ${detail.issueType || "Unknown"}`,
+    `- Status: ${detail.status || "Unknown"}`,
+    `- Priority: ${detail.priority || "Unknown"}`,
+    `- Assignee: ${detail.assignee || "Unassigned"}`,
+    `- Reporter: ${detail.reporter || "Unknown"}`,
+    detail.parent ? `- Parent: ${detail.parent.key} - ${detail.parent.summary}` : "",
+    detail.labels?.length ? `- Labels: ${detail.labels.join(", ")}` : "",
+    detail.created ? `- Created: ${detail.created}` : "",
+    detail.updated ? `- Updated: ${detail.updated}` : "",
+    detail.dueDate ? `- Due: ${detail.dueDate}` : "",
+    "",
+    "## Description",
+    description,
+    "",
+    "## Code Context",
+    repoRoot ? `- Repository: ${path.basename(repoRoot)}` : "- Repository: Not inferred yet.",
+    activeRel && !activeRel.startsWith("..") ? `- Active file: ${activeRel}` : "- Active file: Not inferred yet.",
+    layout.length > 0 ? `- Top-level entries: ${layout.join(", ")}` : "- Top-level entries: Not inferred yet.",
+    "",
+    "## Constraints / Non-Goals",
+    ...(constraints.length > 0 ? constraints.map((v) => `- ${v}`) : ["- Not provided in Jira ticket."]),
+    "",
+    "## Open Questions",
+    ...openQuestions.map((q) => `- ${q}`),
+    "",
+    "## Guidance For AI",
+    "Use only the provided ticket/context as source of truth.",
+    "If a required detail is missing, ask clarifying questions before proposing implementation specifics.",
+    "Keep changes minimal, testable, and aligned with existing patterns.",
+    "",
+    "## Expected Response Format",
+    "1. Proposed implementation approach",
+    "2. Files likely to change with brief reasons",
+    "3. Risks or regressions to watch",
+    "4. Test plan (unit/integration/manual)",
+  ];
+  return lines.filter((l, i, arr) => l !== "" || arr[i - 1] !== "").join("\n").trim() + "\n";
 }
 
 function skeletonLines(widths: number[]): string {
@@ -382,6 +518,7 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
   <div class="actions">
     <button id="createBranch" class="btn">Create branch from this ticket</button>
     <button id="openJira" class="btn secondary">Open in Jira ↗</button>
+    <button id="copyAiContext" class="btn secondary" title="Copy AI-ready markdown for Claude Code / Copilot Chat">Copy AI context</button>
     ${aiButton}
   </div>
   <hr />
@@ -402,12 +539,15 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
     on('openJira', () => vscode.postMessage({ type: 'openJira' }));
     on('generate', () => vscode.postMessage({ type: 'generate' }));
     on('copyKey', () => vscode.postMessage({ type: 'copyKey' }));
+    on('copyAiContext', () => vscode.postMessage({ type: 'copyAiContext' }));
     on('openParent', (e) => { e.preventDefault(); vscode.postMessage({ type: 'openParentJira' }); });
 
     const planWrap = document.getElementById('plan');
     const planBody = document.getElementById('planBody');
     const copyBtn = document.getElementById('copyKey');
     const copyBtnDefault = copyBtn ? copyBtn.innerHTML : '';
+    const copyAiBtn = document.getElementById('copyAiContext');
+    const copyAiDefault = copyAiBtn ? copyAiBtn.textContent : '';
     window.addEventListener('message', (e) => {
       const m = e.data;
       if (m.type === 'planLoading') {
@@ -425,6 +565,9 @@ function renderHtml(detail: TicketDetail, opts: { aiEnabled: boolean }): string 
       } else if (m.type === 'copied' && copyBtn) {
         copyBtn.innerHTML = '${CHECK_ICON}';
         setTimeout(() => { copyBtn.innerHTML = copyBtnDefault; }, 1200);
+      } else if (m.type === 'copiedAiContext' && copyAiBtn) {
+        copyAiBtn.textContent = 'Copied';
+        setTimeout(() => { copyAiBtn.textContent = copyAiDefault; }, 1200);
       }
     });
   </script>

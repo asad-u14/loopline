@@ -209,6 +209,49 @@ test("copyKey: writes the ticket key to the clipboard and confirms back to the w
   assert.ok(messages.some((m: any) => m.type === "copied"));
 });
 
+test("copyAiContext: writes AI-friendly markdown to the clipboard and confirms back to the webview", async () => {
+  const ctx = createMockContext();
+  showTicketDetail(
+    ctx,
+    detail({
+      key: "LPB-88",
+      summary: "Support AI-friendly ticket context",
+      issueType: "Task",
+      status: "In Progress",
+      description: "Allow copying structured markdown for chat assistants.",
+      assignee: "A User",
+      reporter: "B User",
+      priority: "High",
+      labels: ["ai", "ux"],
+      parent: { key: "LPB-8", summary: "Parent" },
+      created: "2026-08-01T00:00:00.000Z",
+      updated: "2026-08-02T00:00:00.000Z",
+      dueDate: "2026-08-10",
+    })
+  );
+
+  capturedPanel.webview._receiveMessage({ type: "copyAiContext" });
+  await waitFor(() => capturedPanel.webview._postedMessages.some((m: any) => m.type === "copiedAiContext"));
+
+  const copied = await vscode.env.clipboard.readText();
+  assert.match(copied, /^# Jira Ticket LPB-88: Support AI-friendly ticket context/m);
+  assert.match(copied, /^## Goal$/m);
+  assert.match(copied, /^## Acceptance Criteria$/m);
+  assert.match(copied, /^- Not provided in Jira ticket\.$/m);
+  assert.match(copied, /^## Metadata$/m);
+  assert.match(copied, /^- Labels: ai, ux$/m);
+  assert.match(copied, /^## Description$/m);
+  assert.match(copied, /^## Code Context$/m);
+  assert.match(copied, /^## Constraints \/ Non-Goals$/m);
+  assert.match(copied, /^## Open Questions$/m);
+  assert.match(copied, /^## Guidance For AI$/m);
+  assert.match(copied, /^## Expected Response Format$/m);
+  assert.match(copied, /Allow copying structured markdown for chat assistants\./);
+
+  const messages = capturedPanel.webview._postedMessages;
+  assert.ok(messages.some((m: any) => m.type === "copiedAiContext"));
+});
+
 // ---- rendered HTML: metadata, status color, skeleton ---------------------------
 
 test("rendered HTML: color-codes the status chip by category", () => {
@@ -260,6 +303,12 @@ test("rendered HTML: includes a copy-key button next to the ticket key", () => {
   const ctx = createMockContext();
   showTicketDetail(ctx, detail());
   assert.match(capturedPanel.webview.html, /id="copyKey"/);
+});
+
+test("rendered HTML: includes a copy-ai-context button", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail());
+  assert.match(capturedPanel.webview.html, /id="copyAiContext"/);
 });
 
 // ---- createBranch -------------------------------------------------------------
