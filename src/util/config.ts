@@ -31,6 +31,7 @@ export interface LooplineConfig {
   aiMaxDiffBytes: number;
   aiCheckDiffAgainstTicket: boolean;
   showTicketDetailsOnBranch: boolean;
+  aiContextSyncEnabled: boolean;
   baseBranch: string;
   updateBaseBeforeBranch: "ask" | "always" | "never";
   groupTicketsByStatus: boolean;
@@ -84,6 +85,7 @@ export function readConfig(): LooplineConfig {
     aiMaxDiffBytes: c.get<number>("ai.maxDiffBytes") ?? 60000,
     aiCheckDiffAgainstTicket: c.get<boolean>("ai.checkDiffAgainstTicket") ?? false,
     showTicketDetailsOnBranch: c.get<boolean>("showTicketDetailsOnBranch") ?? true,
+    aiContextSyncEnabled: c.get<boolean>("aiContextSync.enabled") ?? false,
     baseBranch: (c.get<string>("baseBranch") || "").trim(),
     updateBaseBeforeBranch:
       (c.get<string>("updateBaseBeforeBranch") as "ask" | "always" | "never") || "ask",

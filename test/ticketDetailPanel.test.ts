@@ -1,11 +1,52 @@
-import { test, beforeEach, afterEach } from "node:test";
+import { test, beforeEach, afterEach, after } from "node:test";
 import assert from "node:assert/strict";
 import * as http from "http";
 import type { AddressInfo } from "net";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import { execSync } from "child_process";
 import * as vscode from "vscode";
 import { createMockContext } from "./support/vscode-test-helpers";
 import { showTicketDetail, TicketDetail } from "../src/ui/ticketDetailPanel";
+import { CLAUDE_MD_FILENAME } from "../src/util/aiContext";
 import { startMockServer, MockServer } from "./support/mock-server";
+
+const tmpDirs: string[] = [];
+
+function run(cmd: string, cwd: string) {
+  execSync(cmd, {
+    cwd,
+    stdio: "ignore",
+    env: {
+      ...process.env,
+      GIT_AUTHOR_NAME: "t",
+      GIT_AUTHOR_EMAIL: "t@t.co",
+      GIT_COMMITTER_NAME: "t",
+      GIT_COMMITTER_EMAIL: "t@t.co",
+    },
+  });
+}
+
+function makeRepo(): string {
+  const repo = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "loopline-ticketpanel-")));
+  tmpDirs.push(repo);
+  run("git init -q -b main", repo);
+  run('git config user.name "t"', repo);
+  run('git config user.email "t@t.co"', repo);
+  fs.writeFileSync(path.join(repo, "a.txt"), "1\n");
+  run("git add -A", repo);
+  run('git commit -q -m "init"', repo);
+  return repo;
+}
+
+function workspaceFolder(root: string) {
+  return { uri: vscode.Uri.file(root), name: path.basename(root), index: 0 };
+}
+
+after(() => {
+  tmpDirs.forEach((d) => fs.rmSync(d, { recursive: true, force: true }));
+});
 
 /** Like startMockServer, but delays the response — needed to give a cancellation
  * a real window to land in before the response arrives. */
@@ -250,6 +291,60 @@ test("copyAiContext: writes AI-friendly markdown to the clipboard and confirms b
 
   const messages = capturedPanel.webview._postedMessages;
   assert.ok(messages.some((m: any) => m.type === "copiedAiContext"));
+});
+
+// ---- syncAiContext ----------------------------------------------------------
+
+test("syncAiContext: writes the ticket's AI context into CLAUDE.md and confirms back to the webview", async () => {
+  const repo = makeRepo();
+  vscode.__setWorkspaceFolders([workspaceFolder(repo)]);
+
+  const ctx = createMockContext();
+  showTicketDetail(
+    ctx,
+    detail({
+      key: "LPB-55",
+      summary: "Sync ticket context to CLAUDE.md",
+      description: "Some description.",
+    })
+  );
+
+  capturedPanel.webview._receiveMessage({ type: "syncAiContext" });
+  await waitFor(() => capturedPanel.webview._postedMessages.some((m: any) => m.type === "syncedAiContext"));
+
+  const claudeMdPath = path.join(repo, CLAUDE_MD_FILENAME);
+  const content = fs.readFileSync(claudeMdPath, "utf8");
+  assert.match(content, /<!-- loopline:ticket-context:start -->/);
+  assert.match(content, /Jira Ticket LPB-55: Sync ticket context to CLAUDE\.md/);
+
+  const messages = capturedPanel.webview._postedMessages;
+  assert.ok(messages.some((m: any) => m.type === "syncedAiContext"));
+});
+
+test("syncAiContext: re-syncing a different ticket replaces the previous block instead of duplicating it", async () => {
+  const repo = makeRepo();
+  vscode.__setWorkspaceFolders([workspaceFolder(repo)]);
+
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail({ key: "LPB-56", summary: "First ticket" }));
+  capturedPanel.webview._receiveMessage({ type: "syncAiContext" });
+  await waitFor(() => capturedPanel.webview._postedMessages.some((m: any) => m.type === "syncedAiContext"));
+
+  showTicketDetail(ctx, detail({ key: "LPB-57", summary: "Second ticket" }));
+  capturedPanel.webview._receiveMessage({ type: "syncAiContext" });
+  await waitFor(() =>
+    capturedPanel.webview._postedMessages.filter((m: any) => m.type === "syncedAiContext").length === 2
+  );
+
+  const content = fs.readFileSync(path.join(repo, CLAUDE_MD_FILENAME), "utf8");
+  assert.doesNotMatch(content, /LPB-56/);
+  assert.match(content, /Jira Ticket LPB-57: Second ticket/);
+});
+
+test("rendered HTML: includes a sync-to-CLAUDE.md button", () => {
+  const ctx = createMockContext();
+  showTicketDetail(ctx, detail());
+  assert.match(capturedPanel.webview.html, /id="syncAiContext"/);
 });
 
 // ---- rendered HTML: metadata, status color, skeleton ---------------------------

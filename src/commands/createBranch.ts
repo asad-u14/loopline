@@ -12,6 +12,7 @@ import { withCancellableProgress, isCancelled } from "../util/progress";
 import { log, logError } from "../util/log";
 import { showTicketDetail } from "../ui/ticketDetailPanel";
 import { recordBranchCreated } from "../util/impactStore";
+import { TicketDetail, buildAiContextMarkdown, syncTicketContextToClaudeMd, CLAUDE_MD_FILENAME } from "../util/aiContext";
 
 interface ChosenTicket {
   key: string;
@@ -118,9 +119,60 @@ export async function createBranchCommand(
   }
   await vscode.commands.executeCommand("loopline.refreshTicketStatus");
 
-  // 8. Show ticket details, and offer AI implementation suggestions on request.
+  // 8. Optional: sync this ticket's AI context into CLAUDE.md — off by default,
+  // opt in via loopline.aiContextSync.enabled.
+  if (cfg.aiContextSyncEnabled) {
+    await syncAiContextOnBranchCreate(ctx, jira, chosen, repoRoot, cfg);
+  }
+
+  // 9. Show ticket details, and offer AI implementation suggestions on request.
   if (cfg.showTicketDetailsOnBranch) {
     await showTicketDetailsAndOfferPlan(ctx, jira, chosen, repoRoot, cfg);
+  }
+}
+
+// ---- AI context sync ---------------------------------------------------------
+
+/**
+ * Fetch the full ticket and write its AI context into CLAUDE.md so Claude Code
+ * has it as soon as the branch exists, with no manual copy/paste. Best-effort:
+ * the branch is already created by this point, so a failure here is surfaced
+ * as a warning rather than rolled back or blocking the rest of the flow.
+ */
+async function syncAiContextOnBranchCreate(
+  ctx: vscode.ExtensionContext,
+  jira: JiraService,
+  chosen: ChosenTicket,
+  repoRoot: string,
+  cfg: LooplineConfig
+): Promise<void> {
+  try {
+    const issue = await jira.getIssue(chosen.key);
+    const detail: TicketDetail = {
+      key: issue.key,
+      summary: issue.summary,
+      issueType: issue.issueType,
+      status: issue.status,
+      statusCategory: issue.statusCategory,
+      description: issue.description || "",
+      jiraBaseUrl: cfg.jiraBaseUrl,
+      assignee: issue.assignee,
+      reporter: issue.reporter,
+      priority: issue.priority,
+      labels: issue.labels,
+      created: issue.created,
+      updated: issue.updated,
+      dueDate: issue.dueDate,
+      parent: issue.parent,
+    };
+    const markdown = await buildAiContextMarkdown(ctx, detail);
+    syncTicketContextToClaudeMd(repoRoot, markdown);
+    vscode.window.showInformationMessage(`Loopline: synced ${chosen.key} into ${CLAUDE_MD_FILENAME}.`);
+  } catch (err) {
+    logError("aiContextSync on branch create failed", err);
+    vscode.window.showWarningMessage(
+      `Loopline: couldn't sync ${chosen.key} to ${CLAUDE_MD_FILENAME} (${(err as Error).message}).`
+    );
   }
 }
 

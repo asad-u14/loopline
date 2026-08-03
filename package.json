@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.24.8",
+  "version": "0.24.9",
   "publisher": "loopline",
   "license": "MIT",
   "engines": {
@@ -428,6 +428,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "After creating a branch, open the ticket description in a window and (if AI is enabled) offer to generate implementation suggestions."
+        },
+        "loopline.aiContextSync.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Opt in to syncing the current ticket's AI-ready context into a delimited block in `CLAUDE.md` at the repo root, so Claude Code picks it up automatically without a manual copy/paste. Off by default since it edits a file in your working tree. When on, this also runs automatically after creating a branch from a ticket. You can always trigger it on demand from the ticket panel's *Sync to CLAUDE.md* button, regardless of this setting."
         },
         "loopline.baseBranch": {
           "type": "string",
