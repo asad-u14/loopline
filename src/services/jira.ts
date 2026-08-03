@@ -175,14 +175,25 @@ export class JiraService {
     if (typeof desc === "string") {
       return desc;
     }
-    // Best-effort ADF -> text walk.
+    // Best-effort ADF -> text walk. Links, mentions, and smart links (Confluence
+    // pages, embedded URLs) carry their payload in `attrs`/`marks` rather than
+    // `node.text`, so surface those explicitly instead of silently dropping them.
     const out: string[] = [];
     const walk = (node: any) => {
       if (!node) {
         return;
       }
       if (typeof node.text === "string") {
-        out.push(node.text);
+        const linkHref = Array.isArray(node.marks)
+          ? node.marks.find((m: any) => m?.type === "link")?.attrs?.href
+          : undefined;
+        out.push(linkHref ? `[${node.text}](${linkHref})` : node.text);
+      } else if (node.type === "mention") {
+        out.push(node.attrs?.text ?? "@mention");
+      } else if (node.type === "inlineCard" || node.type === "blockCard" || node.type === "embedCard") {
+        if (node.attrs?.url) {
+          out.push(node.type === "inlineCard" ? node.attrs.url : `${node.attrs.url}\n`);
+        }
       }
       if (Array.isArray(node.content)) {
         node.content.forEach(walk);

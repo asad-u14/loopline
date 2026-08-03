@@ -60,6 +60,104 @@ test("getIssue: the ADF walk skips falsy nodes within content arrays", async () 
   }
 });
 
+test("getIssue: ADF link marks are rendered as markdown links, not just anchor text", async () => {
+  const adf = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "See the " },
+          {
+            type: "text",
+            text: "design doc",
+            marks: [{ type: "link", attrs: { href: "https://acme.atlassian.net/wiki/design" } }],
+          },
+          { type: "text", text: " for details." },
+        ],
+      },
+    ],
+  };
+  const server = await startMockServer([
+    {
+      status: 200,
+      body: {
+        key: "LPB-10",
+        fields: { summary: "S", issuetype: { name: "Task" }, description: adf, status: { name: "To Do" } },
+      },
+    },
+  ]);
+  try {
+    const issue = await cloudService(server.url).getIssue("LPB-10");
+    assert.match(issue.description, /\[design doc\]\(https:\/\/acme\.atlassian\.net\/wiki\/design\)/);
+  } finally {
+    await server.close();
+  }
+});
+
+test("getIssue: ADF mention nodes render the mentioned person's name instead of vanishing", async () => {
+  const adf = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "cc " },
+          { type: "mention", attrs: { id: "abc123", text: "@Jane Doe", userType: "DEFAULT" } },
+          { type: "text", text: " please review." },
+        ],
+      },
+    ],
+  };
+  const server = await startMockServer([
+    {
+      status: 200,
+      body: {
+        key: "LPB-11",
+        fields: { summary: "S", issuetype: { name: "Task" }, description: adf, status: { name: "To Do" } },
+      },
+    },
+  ]);
+  try {
+    const issue = await cloudService(server.url).getIssue("LPB-11");
+    assert.match(issue.description, /cc @Jane Doe please review\./);
+  } finally {
+    await server.close();
+  }
+});
+
+test("getIssue: ADF smart links (inlineCard/blockCard) render the underlying URL", async () => {
+  const adf = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", text: "Spec: " },
+          { type: "inlineCard", attrs: { url: "https://acme.atlassian.net/wiki/spec" } },
+        ],
+      },
+      { type: "blockCard", attrs: { url: "https://figma.com/file/xyz" } },
+    ],
+  };
+  const server = await startMockServer([
+    {
+      status: 200,
+      body: {
+        key: "LPB-12",
+        fields: { summary: "S", issuetype: { name: "Task" }, description: adf, status: { name: "To Do" } },
+      },
+    },
+  ]);
+  try {
+    const issue = await cloudService(server.url).getIssue("LPB-12");
+    assert.match(issue.description, /Spec: https:\/\/acme\.atlassian\.net\/wiki\/spec/);
+    assert.match(issue.description, /https:\/\/figma\.com\/file\/xyz/);
+  } finally {
+    await server.close();
+  }
+});
+
 test("getIssue: 401 is turned into a re-run-the-setup-wizard message", async () => {
   const server = await startMockServer([{ status: 401, body: {} }]);
   try {
