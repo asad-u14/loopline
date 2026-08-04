@@ -338,7 +338,7 @@
       <h2>What's changed</h2>
       <div class="card-grid cols-3">
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Published to the VS Code Marketplace<span class="badge-new">New</span></h3>
-          <p>A GitLab CI pipeline now auto-publishes on every push to main where <code>package.json</code>'s version changed, using <code>vsce</code> with a CI-only token — no more local <code>vsce login</code>. Roadmap item #1 (§7) is effectively shipped.</p></div>
+          <p>Loopline is now live on the Marketplace, with a one-click <b>Publish to Marketplace</b> GitHub Actions workflow using <code>vsce</code> with a repo-scoped token — no more local <code>vsce login</code>. Roadmap item #1 (§7) is effectively shipped.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI-ready ticket context<span class="badge-new">New</span></h3>
           <p>A <b>Copy AI context</b> button on the ticket panel builds grounded Markdown — summary, parsed acceptance criteria/constraints, open questions, repo layout — ready to paste into Claude Code or Copilot Chat.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Optional CLAUDE.md sync<span class="badge-new">New</span></h3>
@@ -579,7 +579,7 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>.loopline.json<span class="badge-new">New</span></h3><p>One committed config file standardizes conventions for the whole team on clone — read-only unless scaffolded explicitly, never secrets.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Guided setup wizard</h3><p>Live credential validation for Jira, GitLab, and the chosen AI provider. All secrets in VS Code Secret Storage — never in settings files.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Per-repo git flags<span class="badge-new">New</span></h3><p><code>loopline.git.commitExtraArgs</code> / <code>pushExtraArgs</code> pass extra flags (e.g. <code>--no-verify</code>) to every commit/push, set in a repo's own workspace settings so it never leaks to other repos.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>CI-published to the Marketplace<span class="badge-new">New</span></h3><p>A GitLab CI stage publishes to the VS Code Marketplace automatically on every version bump to main, via a CI-scoped token — no local publish step.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>One-click Marketplace publish<span class="badge-new">New</span></h3><p>A <code>workflow_dispatch</code> GitHub Actions job runs the test suite, then publishes to the VS Code Marketplace via <code>vsce</code> and a repo secret — triggered deliberately from the Actions tab, no local publish step.</p></div>
       </div>
     </div>
   </section>
@@ -641,7 +641,7 @@
       <div class="eyebrow">7 · Roadmap — what approval would fund</div>
       <h2>Prioritized roughly by value-to-effort</h2>
       <div class="roadmap-list">
-        <div class="rm-item"><div class="rm-rank">1</div><div><div class="title">Rollout &amp; distribution</div><div class="desc">Now live on the VS Code Marketplace with CI auto-publish on every version bump. Remaining: decide whether to also mirror to an internal registry / Open VSX for teams that can't reach the public Marketplace.</div></div><div class="rm-tag high">Shipped — decision pending</div></div>
+        <div class="rm-item"><div class="rm-rank">1</div><div><div class="title">Rollout &amp; distribution</div><div class="desc">Now live on the VS Code Marketplace, published via a one-click GitHub Actions workflow. Remaining: decide whether to also mirror to an internal registry / Open VSX for teams that can't reach the public Marketplace.</div></div><div class="rm-tag high">Shipped — decision pending</div></div>
         <div class="rm-item"><div class="rm-rank">2</div><div><div class="title">AI commit-message suggestions</div><div class="desc">Plus streaming output and prompt caching for faster, cheaper AI responses.</div></div><div class="rm-tag">Depends on §6</div></div>
         <div class="rm-item"><div class="rm-rank">3</div><div><div class="title">Configurability &amp; UX polish</div><div class="desc">Live-preview settings form for name templates, a Getting Started walkthrough.</div></div><div class="rm-tag">—</div></div>
         <div class="rm-item"><div class="rm-rank">4</div><div><div class="title">Richer MRs</div><div class="desc">Reviewers, labels, draft/WIP toggle, auto-close-on-merge linking.</div></div><div class="rm-tag">—</div></div>
@@ -657,7 +657,7 @@
     <div class="slide-body">
       <div class="eyebrow">8–9 · Effort, cost &amp; risk</div>
       <h2>Low ongoing burden, well-understood risks</h2>
-      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Marketplace publishing (roadmap #1) now ships itself via CI; what's left of rollout is internal registry/distribution decisions, not engineering. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 521 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
+      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Marketplace publishing (roadmap #1) is now a one-click GitHub Actions run; what's left of rollout is internal registry/distribution decisions, not engineering. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 521 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Third-party API changes</div>
         <p>Jira/GitLab are already supported with graceful fallbacks (Cloud vs Server, sprint-unsupported); changes are typically small, contained fixes.</p>
