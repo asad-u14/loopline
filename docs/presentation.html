@@ -326,39 +326,33 @@
     <div class="meta-row">
       <span>Prepared by <b>Asad</b></span>
       <span>Team <b>Engineering</b></span>
-      <span>Date <b>22 July 2026</b></span>
-      <span class="status-chip">Working prototype · v0.24.4</span>
+      <span>Date <b>4 August 2026</b></span>
+      <span class="status-chip">Working prototype · v0.24.9</span>
     </div>
   </section>
 
   <!-- SLIDE 1: WHAT'S NEW -->
   <section class="slide" id="slide-1">
     <div class="slide-body">
-      <div class="eyebrow">Since the last review · v0.19.1 → v0.24.4</div>
+      <div class="eyebrow">Since the last review · v0.24.4 → v0.24.9</div>
       <h2>What's changed</h2>
       <div class="card-grid cols-3">
-        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Jira-style ticket panel<span class="badge-new">New</span></h3>
-          <p>Color-coded status, type/priority icons, assignee &amp; reporter avatars, due date, parent/epic breadcrumb, copy-key button, and instant open with a loading skeleton instead of a blank panel.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Team-shared config<span class="badge-new">New</span></h3>
-          <p>Branch/commit name templates and a committed <code>.loopline.json</code> so a whole team standardizes conventions from one file, without touching secrets.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3>
-          <p>Creating an MR can now draft a bullet into the project's <code>CHANGELOG.md</code> under the right section automatically — no AI required.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3>
-          <p>Groups today's commits — across every repo in your workspace — by repo then ticket, and drafts a "what I did" note — AI-rephrased if enabled, plain bullets if not — in a themed panel.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>OpenAI-compatible gateway<span class="badge-new">New</span></h3>
-          <p>All AI features can now run against an internal OpenAI-compatible gateway (e.g. Bedrock behind a corporate proxy), not just Anthropic — one switch, same features.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-6)"></span>Sidebar reliability</h3>
-          <p>The "Current" ticket row now tracks external branch switches (e.g. terminal <code>git checkout</code>) instantly, and offers a one-click button back to main/master whenever the tree is clean.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Test infrastructure unlocked</h3>
-          <p>Jira, GitLab, and Anthropic service classes were previously untestable. A test-only <code>vscode</code> stub now makes them fully coverable.</p></div>
-        <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Per-repo git flags<span class="badge-new">New</span></h3>
-          <p>A repo's workspace settings can now pass extra flags — e.g. <code>--no-verify</code> — to every commit and push Loopline runs, scoped to just that repo.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Published to the VS Code Marketplace<span class="badge-new">New</span></h3>
+          <p>A GitLab CI pipeline now auto-publishes on every push to main where <code>package.json</code>'s version changed, using <code>vsce</code> with a CI-only token — no more local <code>vsce login</code>. Roadmap item #1 (§7) is effectively shipped.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI-ready ticket context<span class="badge-new">New</span></h3>
+          <p>A <b>Copy AI context</b> button on the ticket panel builds grounded Markdown — summary, parsed acceptance criteria/constraints, open questions, repo layout — ready to paste into Claude Code or Copilot Chat.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Optional CLAUDE.md sync<span class="badge-new">New</span></h3>
+          <p>With <code>loopline.aiContextSync.enabled</code> on, that same context is written into a delimited block in <code>CLAUDE.md</code> automatically right after branch creation — or on demand via <b>Sync to CLAUDE.md</b>. Off by default; only that one block is ever touched.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Description fidelity fix</h3>
+          <p>Flattening Jira Cloud's ADF descriptions was silently dropping link URLs, @mentions, and Confluence smart links. Fixed so both the ticket panel and the new AI context carry them through.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-4)"></span>Ticket-panel consistency</h3>
+          <p>The panel opened right after branch creation now builds from the same full field set as "Open Ticket in VS Code" — no more missing status color, icons, avatars, or the loading skeleton on that entry point.</p></div>
       </div>
       <div class="stat-row cols-4" style="margin-top:26px;">
-        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">510</div><div class="delta new">↑ from 161</div></div>
-        <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta new">↑ from 14</div></div>
-        <div class="stat-tile"><div class="label">Source files covered</div><div class="value accent-aqua">39</div><div class="delta new">↑ from 31</div></div>
-        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">37</div><div class="delta">v0.1.0 → v0.24.4</div></div>
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">521</div><div class="delta new">↑ from 510</div></div>
+        <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">37</div><div class="delta new">↑ from 36</div></div>
+        <div class="stat-tile"><div class="label">Source files covered</div><div class="value accent-aqua">40</div><div class="delta new">↑ from 39</div></div>
+        <div class="stat-tile"><div class="label">Releases shipped</div><div class="value accent-violet">42</div><div class="delta">v0.1.0 → v0.24.9</div></div>
       </div>
     </div>
   </section>
@@ -370,7 +364,7 @@
       <h2>The whole ticket-to-MR loop, in a couple of clicks</h2>
       <p style="font-size:16px; max-width:920px;">Loopline is a working VS Code extension that automates the repetitive, error-prone steps between picking up a Jira ticket and opening a GitLab merge request. Today those steps are done by hand, inconsistently, dozens of times a week per developer. Loopline turns <b style="color:var(--text-primary)">pick ticket → branch → commit → push → merge request → ticket status</b> into a couple of clicks, with naming and commit conventions enforced automatically, surfaced in a dedicated sidebar that also tracks its own impact.</p>
       <div class="stat-row cols-3" style="margin-top:20px;">
-        <div class="stat-tile"><div class="label">Status</div><div class="value accent-green" style="font-size:22px;">Functional prototype</div><div class="delta">In active use through 24 iterative releases</div></div>
+        <div class="stat-tile"><div class="label">Status</div><div class="value accent-green" style="font-size:22px;">Functional prototype</div><div class="delta">In active use through 42 iterative releases</div></div>
         <div class="stat-tile"><div class="label">Core actions automated</div><div class="value accent-blue">2</div><div class="delta">Create Branch · Commit, Push &amp; Create MR</div></div>
         <div class="stat-tile"><div class="label">Optional AI capabilities</div><div class="value accent-aqua">4</div><div class="delta">MR descriptions · plans · gap-check · standup</div></div>
       </div>
@@ -539,7 +533,7 @@
   <section class="slide" id="slide-5">
     <div class="slide-body">
       <div class="eyebrow">4 · What's built — core workflow &amp; sidebar</div>
-      <h2>Prototype v0.24.4</h2>
+      <h2>Prototype v0.24.9</h2>
       <div class="card-grid cols-3">
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Loopline sidebar</h3><p>Dedicated activity-bar panel: current branch/ticket, active-sprint tickets grouped by status (In Progress expanded by default), color-coded icons by issue type. Click to branch, open in Jira, or jump back to main/master in one click when the tree is clean.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Branch creation</h3><p>Issue-type→prefix mapping, confirm/edit, existing-branch guard (check out / rename / cancel), optional fetch of a fresh base branch first.</p></div>
@@ -566,6 +560,8 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Standup summary generator<span class="badge-new">New</span></h3><p>Discovers every git repo in the workspace, groups today's commits by repo then ticket, and rephrases each into one grounded line — or a plain bulleted list with AI off. Opens in a themed, copy-to-clipboard panel.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>Dual AI provider<span class="badge-new">New</span></h3><p>Anthropic Messages API, or an OpenAI-compatible internal gateway (e.g. Bedrock behind a corporate proxy) — one setting, same feature set, same review-before-send model.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-2)"></span>Auto-drafted changelog<span class="badge-new">New</span></h3><p>No AI involved: creating an MR can draft a bullet into <code>CHANGELOG.md</code> from the ticket key and commit summary, filed under the right section by branch prefix.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>AI-ready ticket context<span class="badge-new">New</span></h3><p><b>Copy AI context</b> builds grounded Markdown from the ticket — summary, parsed acceptance criteria/constraints, open questions, repo layout — to paste straight into Claude Code or Copilot Chat.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-5)"></span>Optional CLAUDE.md sync<span class="badge-new">New</span></h3><p>Opt-in setting writes that same context into a delimited block in <code>CLAUDE.md</code> automatically after branch creation, or on demand — so Claude Code picks it up without a manual copy/paste.</p></div>
       </div>
     </div>
   </section>
@@ -583,6 +579,7 @@
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>.loopline.json<span class="badge-new">New</span></h3><p>One committed config file standardizes conventions for the whole team on clone — read-only unless scaffolded explicitly, never secrets.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Guided setup wizard</h3><p>Live credential validation for Jira, GitLab, and the chosen AI provider. All secrets in VS Code Secret Storage — never in settings files.</p></div>
         <div class="card"><h3><span class="dot" style="background:var(--series-7)"></span>Per-repo git flags<span class="badge-new">New</span></h3><p><code>loopline.git.commitExtraArgs</code> / <code>pushExtraArgs</code> pass extra flags (e.g. <code>--no-verify</code>) to every commit/push, set in a repo's own workspace settings so it never leaks to other repos.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--series-1)"></span>CI-published to the Marketplace<span class="badge-new">New</span></h3><p>A GitLab CI stage publishes to the VS Code Marketplace automatically on every version bump to main, via a CI-scoped token — no local publish step.</p></div>
       </div>
     </div>
   </section>
@@ -593,9 +590,9 @@
       <div class="eyebrow">4 · Engineering quality</div>
       <h2>Tested, CI-backed, and growing steadily</h2>
       <div class="stat-row cols-4">
-        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">510</div><div class="delta">passing</div></div>
-        <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">36</div><div class="delta">unit + integration</div></div>
-        <div class="stat-tile"><div class="label">Source files</div><div class="value accent-aqua">39</div><div class="delta">under coverage</div></div>
+        <div class="stat-tile"><div class="label">Automated tests</div><div class="value accent-blue">521</div><div class="delta">passing</div></div>
+        <div class="stat-tile"><div class="label">Test files</div><div class="value accent-green">37</div><div class="delta">unit + integration</div></div>
+        <div class="stat-tile"><div class="label">Source files</div><div class="value accent-aqua">40</div><div class="delta">under coverage</div></div>
         <div class="stat-tile"><div class="label">CI pipeline stages</div><div class="value accent-violet">4</div><div class="delta">type-check → test → bundle → package</div></div>
       </div>
       <p style="margin-top:8px; font-size:14.5px;">Jira, GitLab, and Anthropic/OpenAI service classes were previously untestable outside the extension host — a minimal test-only <code>vscode</code> stub and a local HTTP mock server now give real coverage of request shapes and every mapped error status (401/403/404/429, Cloud-vs-Server hints, sprint-unsupported retries). A bundled build keeps startup fast.</p>
@@ -644,7 +641,7 @@
       <div class="eyebrow">7 · Roadmap — what approval would fund</div>
       <h2>Prioritized roughly by value-to-effort</h2>
       <div class="roadmap-list">
-        <div class="rm-item"><div class="rm-rank">1</div><div><div class="title">Rollout &amp; distribution</div><div class="desc">Publish to an internal extension registry (or Open VSX / Marketplace) so the team gets it — and every future update — automatically.</div></div><div class="rm-tag high">Highest leverage</div></div>
+        <div class="rm-item"><div class="rm-rank">1</div><div><div class="title">Rollout &amp; distribution</div><div class="desc">Now live on the VS Code Marketplace with CI auto-publish on every version bump. Remaining: decide whether to also mirror to an internal registry / Open VSX for teams that can't reach the public Marketplace.</div></div><div class="rm-tag high">Shipped — decision pending</div></div>
         <div class="rm-item"><div class="rm-rank">2</div><div><div class="title">AI commit-message suggestions</div><div class="desc">Plus streaming output and prompt caching for faster, cheaper AI responses.</div></div><div class="rm-tag">Depends on §6</div></div>
         <div class="rm-item"><div class="rm-rank">3</div><div><div class="title">Configurability &amp; UX polish</div><div class="desc">Live-preview settings form for name templates, a Getting Started walkthrough.</div></div><div class="rm-tag">—</div></div>
         <div class="rm-item"><div class="rm-rank">4</div><div><div class="title">Richer MRs</div><div class="desc">Reviewers, labels, draft/WIP toggle, auto-close-on-merge linking.</div></div><div class="rm-tag">—</div></div>
@@ -660,7 +657,7 @@
     <div class="slide-body">
       <div class="eyebrow">8–9 · Effort, cost &amp; risk</div>
       <h2>Low ongoing burden, well-understood risks</h2>
-      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Rollout (roadmap #1) is small — days, mostly packaging, docs, and registry setup. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 510 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
+      <p style="font-size:14.5px; max-width:960px; margin-bottom:18px;">The prototype is delivered and de-risked further with each release. Marketplace publishing (roadmap #1) now ships itself via CI; what's left of rollout is internal registry/distribution decisions, not engineering. Later items are self-contained increments, estimable once scope is agreed. The codebase is modular and covered by 521 tests under CI, so additions stay low-risk. AI usage cost is usage-based per call and can be capped; a Sonnet-class model is inexpensive at this scale.</p>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Third-party API changes</div>
         <p>Jira/GitLab are already supported with graceful fallbacks (Cloud vs Server, sprint-unsupported); changes are typically small, contained fixes.</p>
@@ -679,7 +676,7 @@
       </div>
       <div class="risk-row">
         <div class="risk-label"><span class="risk-icon good"></span>Bus factor / maintenance</div>
-        <p>510 tests, CI-backed, documented codebase; low ongoing burden.</p>
+        <p>521 tests, CI-backed, documented codebase; low ongoing burden.</p>
       </div>
     </div>
   </section>
@@ -704,7 +701,7 @@
       <div class="eyebrow">Appendix</div>
       <h2>Commands &amp; key settings</h2>
       <p style="font-size:13.5px; margin-bottom:6px;"><b style="color:var(--text-primary)">Commands:</b> Create Branch from Jira Ticket · Commit, Push &amp; Create MR · Ticket Actions · Run Setup Wizard · Set Jira Credentials · Set GitLab Token · Set AI (Anthropic) API Key · Set AI (OpenAI Gateway) API Key · Show Logs · Diagnose Connection · Refresh Tickets · Show Impact · Generate Standup Summary · Create Project Config File</p>
-      <p style="font-size:13.5px;"><b style="color:var(--text-primary)">Key settings:</b> Jira type (Cloud/Server) · branch/commit prefix mappings + name templates · protected branches · ticket scope (active sprint / all open) · base branch + update-before-branch behavior · Jira status transitions · AI enable + provider + model + base URL · AI acceptance-criteria check · changelog auto-draft + category mapping · show-ticket-details-on-branch · sidebar status grouping + colorful icons · proxy / corporate CA · git commit/push extra args (per-repo) · Impact time-per-action estimates</p>
+      <p style="font-size:13.5px;"><b style="color:var(--text-primary)">Key settings:</b> Jira type (Cloud/Server) · branch/commit prefix mappings + name templates · protected branches · ticket scope (active sprint / all open) · base branch + update-before-branch behavior · Jira status transitions · AI enable + provider + model + base URL · AI acceptance-criteria check · changelog auto-draft + category mapping · AI context sync to CLAUDE.md (opt-in) · show-ticket-details-on-branch · sidebar status grouping + colorful icons · proxy / corporate CA · git commit/push extra args (per-repo) · Impact time-per-action estimates</p>
     </div>
   </section>
 

@@ -1,5 +1,7 @@
 # Loopline
 
+[VS Code Marketplace](https://marketplace.visualstudio.com/publishers/loopline)
+
 Automate the **Jira → branch → commit → push → merge-request** loop without leaving VS Code.
 
 Loopline turns a Jira ticket key into a correctly-named branch, builds a conventional commit message from that branch, pushes to GitLab, and (optionally) opens a merge request with an auto-generated description.
