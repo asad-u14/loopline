@@ -332,8 +332,8 @@
     .deck-backdrop { backdrop-filter: blur(3px); }
   }
   .deck {
-    width: min(1240px, 100%);
-    height: min(880px, 100%);
+    width: min(96vw, 1440px);
+    height: min(94vh, 940px);
     display: flex;
     flex-direction: column;
     background: var(--surface);
@@ -384,11 +384,23 @@
   .deck-bar a.pop:focus-visible,
   .deck-bar button.x:focus-visible { outline: 2px solid var(--line); outline-offset: 2px; }
   .deck-bar button.x { padding: 7px 11px; }
-  .deck iframe {
+  .deck-stage {
     flex: 1;
-    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #101615;
+    display: grid;
+    place-items: center;
+  }
+  /* The deck is authored for a full 1280x800 window; render it at that size
+     and scale-to-fit so every slide keeps its intended layout. */
+  .deck-stage iframe {
+    width: 1280px;
+    height: 800px;
+    flex: none;
     border: 0;
-    background: var(--surface);
+    background: #fff;
+    transform-origin: center center;
   }
   body.deck-open { overflow: hidden; }
 </style>
@@ -581,7 +593,9 @@
         <button class="x" type="button" data-close aria-label="Close presentation">Close ✕</button>
       </div>
     </div>
-    <iframe title="Loopline presentation" data-src="presentation.html" loading="lazy"></iframe>
+    <div class="deck-stage">
+      <iframe title="Loopline presentation" data-src="presentation.html" loading="lazy"></iframe>
+    </div>
   </div>
 </div>
 
@@ -601,11 +615,22 @@
   (function () {
     var backdrop = document.getElementById("deck");
     if (!backdrop) return;
+    var stage = backdrop.querySelector(".deck-stage");
     var frame = backdrop.querySelector("iframe");
     var closeBtn = backdrop.querySelector("[data-close]");
     var lastFocus = null;
+    var BASE_W = 1280, BASE_H = 800;
 
     function isOpen() { return !backdrop.hasAttribute("hidden"); }
+
+    // Scale the fixed-size deck iframe to fit the stage, keeping its aspect.
+    function fit() {
+      if (!stage) return;
+      var w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      var s = Math.min(w / BASE_W, h / BASE_H);
+      frame.style.transform = "scale(" + s + ")";
+    }
 
     function open(e) {
       if (e) e.preventDefault();
@@ -613,6 +638,8 @@
       if (!frame.src) frame.src = frame.getAttribute("data-src");
       backdrop.removeAttribute("hidden");
       document.body.classList.add("deck-open");
+      fit();
+      requestAnimationFrame(fit);
       if (closeBtn) closeBtn.focus();
     }
 
@@ -621,6 +648,8 @@
       document.body.classList.remove("deck-open");
       if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
     }
+
+    window.addEventListener("resize", function () { if (isOpen()) fit(); });
 
     document.querySelectorAll(".js-open-deck").forEach(function (el) {
       el.addEventListener("click", open);
