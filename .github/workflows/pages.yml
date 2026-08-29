@@ -28,7 +28,8 @@ jobs:
         run: |
           mkdir -p _site
           cp -r docs/. _site/
-          cp docs/presentation.html _site/index.html
+          # docs/index.html is the landing page; presentation.html stays reachable at /presentation.html
+          test -f _site/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

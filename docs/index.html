@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Loopline</title>
+<meta name="description" content="A VS Code extension that runs the loop from Jira ticket to merge request — branch, commit, push, MR — without leaving the editor." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+<style>
+  :root {
+    --paper:      #ECEEF0;
+    --surface:    #FFFFFF;
+    --ink:        #131A1C;
+    --ink-soft:   #4B5860;
+    --line:       #0B7A75;
+    --line-ghost: rgba(11, 122, 117, 0.14);
+    --pulse:      #EC9A4C;
+    --rule:       #D3D8DA;
+    --shadow:     0 1px 2px rgba(19, 26, 28, 0.04), 0 12px 32px -12px rgba(19, 26, 28, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0C1413;
+      --surface:    #141E1D;
+      --ink:        #E9EEEC;
+      --ink-soft:   #93A29F;
+      --line:       #2FC3BB;
+      --line-ghost: rgba(47, 195, 187, 0.16);
+      --pulse:      #F0B06B;
+      --rule:       #26312F;
+      --shadow:     0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -16px rgba(0, 0, 0, 0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #0C1413;
+    --surface:    #141E1D;
+    --ink:        #E9EEEC;
+    --ink-soft:   #93A29F;
+    --line:       #2FC3BB;
+    --line-ghost: rgba(47, 195, 187, 0.16);
+    --pulse:      #F0B06B;
+    --rule:       #26312F;
+    --shadow:     0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -16px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  a { color: inherit; }
+
+  h1, h2, h3 {
+    font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .mono {
+    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--line);
+  }
+
+  /* ---- top bar ---- */
+  header.bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 62px;
+  }
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: 19px;
+    text-decoration: none;
+  }
+  .wordmark .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--pulse);
+    box-shadow: 0 0 0 4px var(--line-ghost);
+    flex: none;
+  }
+  nav.links { display: flex; gap: 26px; align-items: center; }
+  nav.links a {
+    font-size: 14px;
+    text-decoration: none;
+    color: var(--ink-soft);
+    transition: color 0.15s;
+  }
+  nav.links a:hover { color: var(--ink); }
+  nav.links a.ghost { display: none; }
+  @media (max-width: 720px) {
+    nav.links a:not(.keep) { display: none; }
+  }
+
+  /* ---- hero ---- */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+    padding: 92px 0 84px;
+  }
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: 44px; padding: 60px 0 56px; }
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    line-height: 1.02;
+    margin: 18px 0 0;
+  }
+  .hero p.lede {
+    font-size: 1.18rem;
+    color: var(--ink-soft);
+    margin: 22px 0 0;
+    max-width: 30em;
+  }
+
+  .cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 22px;
+    border-radius: 9px;
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s;
+  }
+  .btn.primary { background: var(--line); color: #fff; box-shadow: var(--shadow); }
+  :root[data-theme="dark"] .btn.primary,
+  :root:not([data-theme="light"]) .btn.primary { color: #06110F; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .btn.primary { color: #06110F; }
+  }
+  .btn.primary:hover { transform: translateY(-2px); }
+  .btn.secondary { border-color: var(--rule); color: var(--ink); background: var(--surface); }
+  .btn.secondary:hover { border-color: var(--line); transform: translateY(-2px); }
+  .btn:focus-visible { outline: 2px solid var(--line); outline-offset: 3px; }
+
+  .pipe {
+    margin-top: 30px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .pipe b { color: var(--line); font-weight: 600; }
+  .pipe .arr { color: var(--ink-soft); opacity: 0.5; padding: 0 8px; }
+
+  /* ---- loop diagram ---- */
+  .diagram { width: 100%; }
+  .diagram svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .diagram .track { fill: none; stroke: var(--line-ghost); stroke-width: 12; }
+  .diagram .line  { fill: none; stroke: var(--line); stroke-width: 5; stroke-linecap: round; }
+  .diagram .stn   { fill: var(--surface); stroke: var(--line); stroke-width: 4; }
+  .diagram .lbl {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    fill: var(--ink);
+  }
+  .diagram .mid {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    fill: var(--ink-soft);
+  }
+  .pulse-static { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-anim { display: none; }
+    .pulse-static { display: block; }
+  }
+
+  /* ---- section frame ---- */
+  section { padding: 78px 0; border-top: 1px solid var(--rule); }
+  .section-head { max-width: 34em; margin-bottom: 52px; }
+  .section-head h2 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    margin-top: 12px;
+  }
+  .section-head p { color: var(--ink-soft); margin: 14px 0 0; }
+
+  /* ---- the line: stops on a spine ---- */
+  .spine { position: relative; padding-left: 46px; }
+  .spine::before {
+    content: "";
+    position: absolute;
+    left: 11px; top: 6px; bottom: 6px;
+    width: 3px;
+    background: var(--line-ghost);
+  }
+  .stop {
+    position: relative;
+    padding: 26px 0 30px;
+    opacity: 1;
+  }
+  .stop + .stop { border-top: 1px dashed var(--rule); }
+  .stop::before {
+    content: "";
+    position: absolute;
+    left: -41px; top: 32px;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 4px solid var(--line);
+  }
+  .stop .stop-k {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--line);
+  }
+  .stop h3 { font-size: 1.32rem; margin: 8px 0 10px; letter-spacing: -0.018em; }
+  .stop p { margin: 0; color: var(--ink-soft); max-width: 60ch; }
+  .stop code {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.86em;
+    background: var(--line-ghost);
+    color: var(--ink);
+    padding: 2px 6px;
+    border-radius: 5px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+  }
+
+  /* ---- extras grid ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  .cell { background: var(--surface); padding: 26px 24px; }
+  .cell h3 { font-size: 1.02rem; margin-bottom: 8px; letter-spacing: -0.015em; }
+  .cell p { margin: 0; font-size: 14.5px; color: var(--ink-soft); }
+  .cell .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--line);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  /* ---- closing ---- */
+  .closing {
+    text-align: center;
+    padding: 100px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .closing h2 { font-size: clamp(2rem, 5vw, 3rem); }
+  .closing p { color: var(--ink-soft); margin: 16px auto 0; max-width: 26em; }
+  .closing .cta-row { justify-content: center; }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 40px 0 64px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+  }
+  .foot-inner { display: flex; flex-wrap: wrap; gap: 18px 30px; align-items: center; justify-content: space-between; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+  .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap bar-inner">
+    <a class="wordmark" href="#top"><span class="dot"></span>Loopline</a>
+    <nav class="links">
+      <a href="#line">The line</a>
+      <a href="#extras">Extras</a>
+      <a class="keep" href="presentation.html">Presentation</a>
+      <a class="keep" href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false">Marketplace</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<div class="wrap">
+  <section class="hero" style="border-top:0">
+    <div>
+      <span class="eyebrow">VS Code extension · Jira + GitLab</span>
+      <h1>The line from Jira ticket to merge request.</h1>
+      <p class="lede">
+        Loopline runs the loop — branch, commit, push, MR — without leaving the editor.
+        Correct branch names, conventional commits, and a real MR description, every time.
+      </p>
+      <div class="cta-row">
+        <a class="btn primary" href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false">
+          Install from the Marketplace →
+        </a>
+        <a class="btn secondary" href="presentation.html">View the presentation</a>
+      </div>
+      <div class="pipe mono">
+        <b>LPB-1234</b><span class="arr">→</span>bugfix/LPB-1234-fix-login-redirect<span class="arr">→</span><b>feat:</b> LPB-1234 fix login redirect<span class="arr">→</span>MR !87
+      </div>
+    </div>
+
+    <div class="diagram" aria-hidden="true">
+      <svg viewBox="0 0 472 340" role="img">
+        <path id="loop" fill="none" d="M 70 46 H 372 A 34 34 0 0 1 406 80 V 260 A 34 34 0 0 1 372 294 H 70 A 34 34 0 0 1 36 260 V 80 A 34 34 0 0 1 70 46 Z" />
+        <use href="#loop" class="track" />
+        <use href="#loop" class="line" />
+
+        <text class="mid" x="221" y="163" text-anchor="middle" font-size="15">THE</text>
+        <text class="mid" x="221" y="188" text-anchor="middle" font-size="21">LOOP LINE</text>
+
+        <!-- stations -->
+        <circle class="stn" cx="118" cy="46" r="9" />
+        <text class="lbl" x="118" y="26" text-anchor="middle">TICKET</text>
+
+        <circle class="stn" cx="330" cy="46" r="9" />
+        <text class="lbl" x="330" y="26" text-anchor="middle">BRANCH</text>
+
+        <circle class="stn" cx="406" cy="176" r="9" />
+        <text class="lbl" x="420" y="181" text-anchor="start">COMMIT</text>
+
+        <circle class="stn" cx="330" cy="294" r="9" />
+        <text class="lbl" x="330" y="320" text-anchor="middle">PUSH</text>
+
+        <circle class="stn" cx="118" cy="294" r="9" />
+        <text class="lbl" x="118" y="320" text-anchor="middle">MR</text>
+
+        <!-- travelling pulse -->
+        <circle class="pulse-anim" r="6.5" fill="var(--pulse)">
+          <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
+            <mpath href="#loop" />
+          </animateMotion>
+        </circle>
+        <circle class="pulse-static" cx="118" cy="46" r="6.5" fill="var(--pulse)" />
+      </svg>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="line">
+    <div class="section-head">
+      <span class="eyebrow">The line · five stops</span>
+      <h2>Every stop is one keystroke of context you don't have to carry.</h2>
+      <p>Loopline reads the ticket key out of your branch name and back again, so each step already knows what the last one decided.</p>
+    </div>
+
+    <div class="spine">
+      <div class="stop reveal">
+        <span class="stop-k">01 — Ticket</span>
+        <h3>Start from the sprint, not a blank branch name.</h3>
+        <p>A dedicated sidebar lists your active-sprint Jira tickets, grouped by status, with the ones that already have a local branch marked <em>on branch</em>. Click a ticket to open it in a themed panel styled after Jira's own issue view — summary, status chip, assignee, description — no browser needed. One toggle switches the scope to all open tickets.</p>
+      </div>
+      <div class="stop reveal">
+        <span class="stop-k">02 — Branch</span>
+        <h3>One ticket key becomes a correct branch.</h3>
+        <p>Loopline maps the issue type to a prefix, slugifies the title, and lets you confirm or edit before it checks out <code>bugfix/LPB-1234-some-summary-issue</code>. It can fetch the base branch from origin first so you start from current code, and if a branch already exists for that ticket it stops and offers to switch — instead of silently landing you on the wrong one.</p>
+      </div>
+      <div class="stop reveal">
+        <span class="stop-k">03 — Commit</span>
+        <h3>The branch name writes the commit.</h3>
+        <p>It parses the key and type back out of the branch and builds <code>feat: LPB-1234 some summary issue</code>. Staging respects your intent — if you've staged files, or individual hunks with <code>git add -p</code>, it commits exactly that; if nothing is staged it asks before pulling in untracked files. Re-run it and it offers to squash to one commit per MR with <code>--force-with-lease</code>.</p>
+      </div>
+      <div class="stop reveal">
+        <span class="stop-k">04 — Push</span>
+        <h3>Pushed with upstream tracking, checked for duplicates.</h3>
+        <p>Loopline pushes the branch with tracking set, then checks for an existing open merge request for it before doing anything else — so re-running the command updates the loop instead of opening a second MR.</p>
+      </div>
+      <div class="stop reveal">
+        <span class="stop-k">05 — Merge request</span>
+        <h3>Open the MR with a description worth reading.</h3>
+        <p>Optionally, Loopline drafts a real MR body from the branch diff and the ticket — summary, notable changes, the why, testing notes — and opens it in an editor for you to edit first. It can move the Jira ticket to <em>In Review</em> as the MR opens, and drop a dated bullet into an existing <code>CHANGELOG.md</code>. AI is off by default and points wherever you tell it to.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="extras">
+    <div class="section-head">
+      <span class="eyebrow">Off the main line</span>
+      <h2>The parts of the day that aren't a straight run.</h2>
+    </div>
+    <div class="grid">
+      <div class="cell">
+        <span class="tag">Status bar</span>
+        <h3>Always-on ticket indicator</h3>
+        <p>On a convention-named branch, the status bar shows the ticket. Click it to open the Jira issue or the merge request, copy the key, or jump into the next step. Updates when you switch branches from the terminal.</p>
+      </div>
+      <div class="cell">
+        <span class="tag">Standup</span>
+        <h3>Summary from real commits</h3>
+        <p>Reads today's commits across your local branches, groups them by the ticket key already in each message, and opens a copy-ready draft. Grounded only in commits that actually happened.</p>
+      </div>
+      <div class="cell">
+        <span class="tag">Impact</span>
+        <h3>Time-saved footer</h3>
+        <p><span class="mono">12 branches · 8 commits · 5 MRs · ~3.5h saved</span>. Hidden until there's something to show, with the estimate's assumptions always in view.</p>
+      </div>
+      <div class="cell">
+        <span class="tag">Teams</span>
+        <h3>Shared <span class="mono">.loopline.json</span></h3>
+        <p>Scaffold a committed config so everyone shares branch and commit conventions. An explicit personal setting always wins; secrets and tokens stay personal.</p>
+      </div>
+      <div class="cell">
+        <span class="tag">Networks</span>
+        <h3>Corporate proxy &amp; CA diagnostics</h3>
+        <p>A one-command report covers proxy, CA certs, DNS, and a live API call with the exact failure code — for self-hosted Jira and GitLab behind a proxy or TLS inspection.</p>
+      </div>
+      <div class="cell">
+        <span class="tag">Privacy</span>
+        <h3>AI is opt-in, and yours</h3>
+        <p>Both AI features ship disabled. Enabled, they send your diff and ticket text to the Anthropic API — or to your company's compatible gateway. The key lives in VS Code Secret Storage.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <div class="closing">
+    <span class="eyebrow">Close the loop</span>
+    <h2>Ride it once and the branch name is never your problem again.</h2>
+    <p>Free and MIT licensed. Install it, run the setup wizard, and start your next ticket from the sidebar.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false">Install from the Marketplace →</a>
+      <a class="btn secondary" href="presentation.html">View the presentation</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>Loopline · v0.24.9 · MIT licensed</span>
+    <div class="foot-links">
+      <a href="presentation.html">Presentation</a>
+      <a href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false">VS Code Marketplace</a>
+      <a href="https://github.com/asad-u14/loopline">Source</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.2 });
+    document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+  })();
+</script>
+
+</body>
+</html>
