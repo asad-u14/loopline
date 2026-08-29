@@ -2,7 +2,7 @@
   "name": "loopline",
   "displayName": "Loopline",
   "description": "Automate the Jira → branch → commit → push → merge-request loop from inside VS Code.",
-  "version": "0.24.9",
+  "version": "0.24.10",
   "publisher": "loopline",
   "license": "MIT",
   "homepage": "https://asad-u14.github.io/loopline/",

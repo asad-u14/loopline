@@ -2,6 +2,10 @@
 
 All notable changes to Loopline are documented here.
 
+## [0.24.10] — 2026-08-29
+### Changed
+- **Marketplace listing now links out to the project.** `package.json` carries real `homepage` (the new GitHub Pages landing page), `repository`, and `bugs` URLs, so the Marketplace **Resources** panel shows Homepage, Repository, and Issues alongside License and Changelog. `docs/` is no longer bundled into the `.vsix`.
+
 ## [0.24.5] — 2026-07-22
 ### Fixed
 - **The ticket panel opened after branch creation didn't match "Open Ticket in VS Code."** It had its own separate call into the ticket-detail panel that only ever fetched summary/description/status, so it never picked up the Jira-style redesign (status color, icons, avatars, labels, dates, due date, parent breadcrumb) or the instant-open-with-skeleton behavior added in 0.23.1–0.24.1 — both entry points now build the panel from the same full set of fields.
