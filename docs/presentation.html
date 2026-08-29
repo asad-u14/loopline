@@ -55,7 +55,9 @@
     inset: 0;
     display: none;
     flex-direction: column;
-    justify-content: center;
+    /* "safe" keeps the slide top reachable/scrollable when content is taller
+       than the viewport (e.g. embedded in a smaller iframe). */
+    justify-content: safe center;
     padding: 64px 88px;
     background: var(--surface-1);
     overflow-y: auto;
@@ -92,7 +94,7 @@
   .slide-body { max-width: 1180px; width: 100%; margin: 0 auto; }
 
   /* ---------- Title slide ---------- */
-  #slide-0 { justify-content: center; align-items: flex-start; background: var(--surface-1); }
+  #slide-0 { justify-content: safe center; align-items: flex-start; background: var(--surface-1); }
   #slide-0::before {
     content: "";
     position: absolute; inset: 0;

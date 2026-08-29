@@ -324,16 +324,19 @@
     inset: 0;
     z-index: 100;
     background: rgba(6, 12, 11, 0.66);
-    padding: clamp(10px, 3.5vw, 44px);
+    padding: clamp(8px, 2.4vw, 32px);
+    overflow: auto;
   }
   .deck-backdrop[hidden] { display: none; }
-  .deck-backdrop { display: grid; place-items: center; }
+  .deck-backdrop { display: grid; place-items: safe center; }
   @supports (backdrop-filter: blur(3px)) {
     .deck-backdrop { backdrop-filter: blur(3px); }
   }
   .deck {
-    width: min(96vw, 1440px);
-    height: min(94vh, 940px);
+    width: min(100%, 1400px);
+    height: min(100%, 900px);
+    max-width: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     background: var(--surface);
@@ -341,6 +344,10 @@
     border-radius: 14px;
     box-shadow: 0 24px 70px -20px rgba(0, 0, 0, 0.55);
     overflow: hidden;
+  }
+  @media (max-width: 640px) {
+    .deck-backdrop { padding: 0; }
+    .deck { border-radius: 0; border: 0; }
   }
   @media (prefers-reduced-motion: no-preference) {
     .deck { animation: deck-in 0.2s ease both; }
@@ -386,21 +393,16 @@
   .deck-bar button.x { padding: 7px 11px; }
   .deck-stage {
     flex: 1;
-    position: relative;
-    overflow: hidden;
-    background: #101615;
-    display: grid;
-    place-items: center;
+    min-height: 0;
+    display: flex;
+    background: #fff;
   }
-  /* The deck is authored for a full 1280x800 window; render it at that size
-     and scale-to-fit so every slide keeps its intended layout. */
   .deck-stage iframe {
-    width: 1280px;
-    height: 800px;
-    flex: none;
+    flex: 1;
+    width: 100%;
+    height: 100%;
     border: 0;
     background: #fff;
-    transform-origin: center center;
   }
   body.deck-open { overflow: hidden; }
 </style>
@@ -615,22 +617,11 @@
   (function () {
     var backdrop = document.getElementById("deck");
     if (!backdrop) return;
-    var stage = backdrop.querySelector(".deck-stage");
     var frame = backdrop.querySelector("iframe");
     var closeBtn = backdrop.querySelector("[data-close]");
     var lastFocus = null;
-    var BASE_W = 1280, BASE_H = 800;
 
     function isOpen() { return !backdrop.hasAttribute("hidden"); }
-
-    // Scale the fixed-size deck iframe to fit the stage, keeping its aspect.
-    function fit() {
-      if (!stage) return;
-      var w = stage.clientWidth, h = stage.clientHeight;
-      if (!w || !h) return;
-      var s = Math.min(w / BASE_W, h / BASE_H);
-      frame.style.transform = "scale(" + s + ")";
-    }
 
     function open(e) {
       if (e) e.preventDefault();
@@ -638,8 +629,6 @@
       if (!frame.src) frame.src = frame.getAttribute("data-src");
       backdrop.removeAttribute("hidden");
       document.body.classList.add("deck-open");
-      fit();
-      requestAnimationFrame(fit);
       if (closeBtn) closeBtn.focus();
     }
 
@@ -648,8 +637,6 @@
       document.body.classList.remove("deck-open");
       if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
     }
-
-    window.addEventListener("resize", function () { if (isOpen()) fit(); });
 
     document.querySelectorAll(".js-open-deck").forEach(function (el) {
       el.addEventListener("click", open);
