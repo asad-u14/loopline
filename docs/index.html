@@ -110,10 +110,11 @@
     font-size: 19px;
     text-decoration: none;
   }
-  .wordmark img {
-    width: 24px; height: 24px;
+  .wordmark .mark {
+    width: 23px; height: 23px;
     flex: none;
     display: block;
+    color: var(--line);
   }
   nav.links { display: flex; gap: 26px; align-items: center; }
   nav.links a {
@@ -322,7 +323,14 @@
 
 <header class="bar">
   <div class="wrap bar-inner">
-    <a class="wordmark" href="#top"><img src="icon.png" alt="" width="24" height="24" />Loopline</a>
+    <a class="wordmark" href="#top" aria-label="Loopline">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4.5 12a7.5 7.5 0 0 1 12.8-5.3" />
+        <path d="M19.5 12a7.5 7.5 0 0 1-12.8 5.3" />
+        <polyline points="17.3 3.2 17.3 6.7 13.8 6.7" />
+        <polyline points="6.7 20.8 6.7 17.3 10.2 17.3" />
+        <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      </svg>Loopline</a>
     <nav class="links">
       <a href="#line">The line</a>
       <a href="#extras">Extras</a>
