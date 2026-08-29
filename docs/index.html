@@ -317,6 +317,80 @@
   footer a { text-decoration: none; }
   footer a:hover { color: var(--ink); }
   .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+
+  /* ---- presentation modal ---- */
+  .deck-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(6, 12, 11, 0.66);
+    padding: clamp(10px, 3.5vw, 44px);
+  }
+  .deck-backdrop[hidden] { display: none; }
+  .deck-backdrop { display: grid; place-items: center; }
+  @supports (backdrop-filter: blur(3px)) {
+    .deck-backdrop { backdrop-filter: blur(3px); }
+  }
+  .deck {
+    width: min(1240px, 100%);
+    height: min(880px, 100%);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    box-shadow: 0 24px 70px -20px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .deck { animation: deck-in 0.2s ease both; }
+    @keyframes deck-in { from { opacity: 0; transform: translateY(10px) scale(0.99); } }
+  }
+  .deck-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 12px 11px 18px;
+    border-bottom: 1px solid var(--rule);
+    flex: none;
+  }
+  .deck-bar .title {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .deck-bar .actions { display: flex; align-items: center; gap: 8px; }
+  .deck-bar a.pop,
+  .deck-bar button.x {
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 7px 13px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .deck-bar a.pop:hover,
+  .deck-bar button.x:hover { border-color: var(--line); color: var(--line); }
+  .deck-bar a.pop:focus-visible,
+  .deck-bar button.x:focus-visible { outline: 2px solid var(--line); outline-offset: 2px; }
+  .deck-bar button.x { padding: 7px 11px; }
+  .deck iframe {
+    flex: 1;
+    width: 100%;
+    border: 0;
+    background: var(--surface);
+  }
+  body.deck-open { overflow: hidden; }
 </style>
 </head>
 <body>
@@ -334,7 +408,7 @@
     <nav class="links">
       <a href="#line">The line</a>
       <a href="#extras">Extras</a>
-      <a class="keep" href="presentation.html">Presentation</a>
+      <a class="keep js-open-deck" href="presentation.html">Presentation</a>
       <a class="keep" href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false" target="_blank" rel="noopener">Marketplace</a>
     </nav>
   </div>
@@ -354,7 +428,7 @@
         <a class="btn primary" href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false" target="_blank" rel="noopener">
           Install from the Marketplace →
         </a>
-        <a class="btn secondary" href="presentation.html">View the presentation</a>
+        <a class="btn secondary js-open-deck" href="presentation.html">View the presentation</a>
       </div>
       <div class="pipe mono">
         <b>LPB-1234</b><span class="arr">→</span>bugfix/LPB-1234-fix-login-redirect<span class="arr">→</span><b>feat:</b> LPB-1234 fix login redirect<span class="arr">→</span>MR !87
@@ -482,23 +556,37 @@
     <p>Free to install. Run the setup wizard and start your next ticket from the sidebar.</p>
     <div class="cta-row">
       <a class="btn primary" href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false" target="_blank" rel="noopener">Install from the Marketplace →</a>
-      <a class="btn secondary" href="presentation.html">View the presentation</a>
+      <a class="btn secondary js-open-deck" href="presentation.html">View the presentation</a>
     </div>
   </div>
 </div>
 
 <footer>
   <div class="wrap foot-inner">
-    <span>Loopline · v0.24.9 · © 2026 All rights reserved.</span>
+    <span>Loopline · v0.24.10 · © 2026 All rights reserved.</span>
     <div class="foot-links">
-      <a href="presentation.html">Presentation</a>
+      <a class="js-open-deck" href="presentation.html">Presentation</a>
       <a href="https://marketplace.visualstudio.com/items?itemName=loopline.loopline&amp;ssr=false" target="_blank" rel="noopener">VS Code Marketplace</a>
       <a href="https://github.com/asad-u14/loopline" target="_blank" rel="noopener">Source</a>
     </div>
   </div>
 </footer>
 
+<div class="deck-backdrop" id="deck" role="dialog" aria-modal="true" aria-label="Loopline presentation" hidden>
+  <div class="deck">
+    <div class="deck-bar">
+      <span class="title">Loopline · presentation</span>
+      <div class="actions">
+        <a class="pop" href="presentation.html" target="_blank" rel="noopener">Open as page ↗</a>
+        <button class="x" type="button" data-close aria-label="Close presentation">Close ✕</button>
+      </div>
+    </div>
+    <iframe title="Loopline presentation" data-src="presentation.html" loading="lazy"></iframe>
+  </div>
+</div>
+
 <script>
+  // Scroll reveals
   (function () {
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var io = new IntersectionObserver(function (entries) {
@@ -507,6 +595,42 @@
       });
     }, { threshold: 0.2 });
     document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+  })();
+
+  // Presentation modal — links still navigate to the page if JS is off
+  (function () {
+    var backdrop = document.getElementById("deck");
+    if (!backdrop) return;
+    var frame = backdrop.querySelector("iframe");
+    var closeBtn = backdrop.querySelector("[data-close]");
+    var lastFocus = null;
+
+    function isOpen() { return !backdrop.hasAttribute("hidden"); }
+
+    function open(e) {
+      if (e) e.preventDefault();
+      lastFocus = document.activeElement;
+      if (!frame.src) frame.src = frame.getAttribute("data-src");
+      backdrop.removeAttribute("hidden");
+      document.body.classList.add("deck-open");
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function close() {
+      backdrop.setAttribute("hidden", "");
+      document.body.classList.remove("deck-open");
+      if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+    }
+
+    document.querySelectorAll(".js-open-deck").forEach(function (el) {
+      el.addEventListener("click", open);
+    });
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop || (e.target.closest && e.target.closest("[data-close]"))) close();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && isOpen()) close();
+    });
   })();
 </script>
 
