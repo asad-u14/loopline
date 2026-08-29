@@ -5,6 +5,14 @@
   "version": "0.24.9",
   "publisher": "loopline",
   "license": "MIT",
+  "homepage": "https://asad-u14.github.io/loopline/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/asad-u14/loopline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/asad-u14/loopline/issues"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -568,13 +576,6 @@
     "esbuild": "^0.23.1",
     "tslib": "^2.8.1",
     "typescript": "^5.5.4"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-org/loopline.git"
-  },
-  "bugs": {
-    "url": "https://github.com/your-org/loopline/issues"
   },
   "allowScripts": {
     "@vscode/vsce-sign@2.0.9": true,
